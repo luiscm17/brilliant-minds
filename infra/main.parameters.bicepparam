@@ -1,5 +1,5 @@
 using './main.bicep'
 
-param namePrefix = 'docagent'
+param namePrefix = 'mshack'
 
-param location = 'westus'
+param location = 'eastus'
