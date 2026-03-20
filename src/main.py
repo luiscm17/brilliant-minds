@@ -1,22 +1,33 @@
-"""Entry point for DocSimplify CLI.
+"""FastAPI entrypoint for DocSimplify AI backend.
 
-Demonstrates usage of the TeacherAgent to answer questions
-about complex concepts in a simplified way.
+Registers all routers under /api/v1 and configures CORS and middleware.
 """
 
-import asyncio
-from src.agents.teacher_agent import teacher_agent
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from src.api.v1.routers import auth, users, documents, chats
+
+app = FastAPI(
+    title="DocSimplify AI",
+    description="AI backend to simplify documents for people with dyslexia and ADHD.",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
+app.include_router(documents.router, prefix="/api/v1")
+app.include_router(chats.router, prefix="/api/v1")
 
 
-async def main():
-    teacher = await teacher_agent()
-
-    question = "Can you explain what a neural network is?"
-    response = await teacher.run(question)
-
-    print("User:", question)
-    print("TeacherAgent:", response)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "DocSimplify AI"}
