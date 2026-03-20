@@ -1,0 +1,19 @@
+[project]
+name = "docsimplify"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "agent-framework>=1.0.0rc4",
+    "agent-framework-azure-ai>=1.0.0rc4",
+    "dotenv>=0.9.9",
+]
+
+[tool.hatch.package]
+src = "src"
+
+[tool.uv]
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'"
+]
