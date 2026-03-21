@@ -102,6 +102,9 @@ module generativeModelModule 'modules/generative-model.bicep' = {
     raiPolicyName: raiPolicyName
     
   }
+  dependsOn: [
+    aiProjectModule
+  ]
 }
 
 module embeddingModelModule 'modules/embedding-model.bicep' = {
