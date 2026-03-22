@@ -113,6 +113,12 @@ class AzureOpenAISettings:
 
     _AOAI_ENDPOINT: Optional[str] = os.getenv("AOAI_ENDPOINT")
     _AOAI_API_KEY: Optional[str] = os.getenv("AOAI_KEY")
+    _AOAI_DEPLOYMENT_NAME: Optional[str] = os.getenv("AOAI_DEPLOYMENT_NAME")
+    _AOAI_MODEL_NAME: Optional[str] = os.getenv("AI_MODEL_NAME")
+    _EMBEDDING_MODEL_NAME: Optional[str] = os.getenv("EMBEDDING_MODEL_NAME")
+    _EMBEDDING_MODEL_DEPLOYMENT_NAME: Optional[str] = os.getenv(
+        "EMBEDDING_MODEL_DEPLOYMENT_NAME"
+    )
 
     @classmethod
     def get_endpoint(cls) -> str:
@@ -130,11 +136,39 @@ class AzureOpenAISettings:
             raise ValueError("AOAI_KEY is not configured")
         return aoai_api_key
 
+    @classmethod
+    def get_deployment_name(cls) -> str:
+        aoai_deployment_name = cls._AOAI_DEPLOYMENT_NAME
+        if not aoai_deployment_name:
+            raise ValueError("AOAI_DEPLOYMENT_NAME is not configured")
+        return aoai_deployment_name
+    
+    @classmethod
+    def get_model_name(cls) -> str:
+        aoai_model_name = cls._AOAI_MODEL_NAME
+        if not aoai_model_name:
+            raise ValueError("AI_MODEL_NAME is not configured")
+        return aoai_model_name
+
+    @classmethod
+    def get_embedding_deployment_name(cls) -> str:
+        embedding_deployment_name = cls._EMBEDDING_MODEL_DEPLOYMENT_NAME
+        if not embedding_deployment_name:
+            raise ValueError("AOAI_DEPLOYMENT_NAME is not configured")
+        return embedding_deployment_name
+
+    @classmethod
+    def get_embedding_model_name(cls) -> str:
+        embedding_model_name = cls._EMBEDDING_MODEL_NAME
+        if not embedding_model_name:
+            raise ValueError("AOAI_DEPLOYMENT_NAME is not configured")
+        return embedding_model_name
+
 
 class KnowledgeSourceSettings:
     """Centralized settings for the default knowledge source."""
 
-    _KS_DEFAULT_NAME = "mypdf-ks-v1"
+    _KS_DEFAULT_NAME = "ks-name-default"
     _KS_DEFAULT_DESCRIPTION = "Knowledge Source automática desde Blob con mi PDF"
     _KS_NAME: Optional[str] = os.getenv("KNOWLEDGE_SOURCE_NAME")
     _KS_DESCRIPTION: Optional[str] = os.getenv("KNOWLEDGE_SOURCE_DESCRIPTION")
@@ -161,3 +195,58 @@ class KnowledgeSourceSettings:
         """Ensure both name and description are resolvable."""
         cls.get_name()
         cls.get_description()
+
+
+class KnowledgeBaseSettings:
+    """Centralized settings for the default knowledge base."""
+
+    _KB_DEFAULT_NAME = "kb-name-deafult"
+    _KB_DEFAULT_DESCRIPTION = "Agentic RAG sobre mi PDF"
+    _KB_DEFAULT_ANSWER_INSTRUCTIONS = (
+        "Responde en español, cita siempre la página del PDF."
+    )
+    _KB_DEFAULT_RETRIEVAL_INSTRUCTIONS = (
+        "Responde en español, cita siempre la página del PDF."
+    )
+    _KB_NAME: Optional[str] = os.getenv("KNOWLEDGE_BASE_NAME")
+    _KB_DESCRIPTION: Optional[str] = os.getenv("KNOWLEDGE_BASE_DESCRIPTION")
+    _KB_ANSWER_INSTRUCTIONS: Optional[str] = os.getenv(
+        "KNOWLEDGE_BASE_ANSWER_INSTRUCTIONS"
+    )
+    _KB_RETRIEVAL_INSTRUCTIONS: Optional[str] = os.getenv(
+        "KNOWLEDGE_BASE_RETRIEVAL_INSTRUCTIONS"
+    )
+
+    @classmethod
+    def _value_or_default(cls, value: Optional[str], default: str) -> str:
+        resolved = value or default
+        if not resolved.strip():
+            raise ValueError("Knowledge base values must not be empty")
+        return resolved
+
+    @classmethod
+    def get_name(cls) -> str:
+        return cls._value_or_default(cls._KB_NAME, cls._KB_DEFAULT_NAME)
+
+    @classmethod
+    def get_description(cls) -> str:
+        return cls._value_or_default(cls._KB_DESCRIPTION, cls._KB_DEFAULT_DESCRIPTION)
+
+    @classmethod
+    def get_answer_instructions(cls) -> str:
+        return cls._value_or_default(
+            cls._KB_ANSWER_INSTRUCTIONS, cls._KB_DEFAULT_ANSWER_INSTRUCTIONS
+        )
+
+    @classmethod
+    def get_retrieval_instructions(cls) -> str:
+        return cls._value_or_default(
+            cls._KB_RETRIEVAL_INSTRUCTIONS, cls._KB_DEFAULT_RETRIEVAL_INSTRUCTIONS
+        )
+
+    @classmethod
+    def validate(cls) -> None:
+        cls.get_name()
+        cls.get_description()
+        cls.get_answer_instructions()
+        cls.get_retrieval_instructions()
