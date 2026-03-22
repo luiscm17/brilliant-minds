@@ -1,5 +1,6 @@
 """Simplifier Agent — rewrites text to a target reading level using Plain Language rules."""
 
+from typing import Optional
 from src.agents.base_agent import AzureAIProvider
 
 LEVEL_RULES = {
@@ -22,13 +23,25 @@ class SimplifierAgent:
     def __init__(self, agent):
         self._agent = agent
 
-    async def run(self, text: str, reading_level: str, preset: str, avoid_words: list[str]) -> str:
+    async def run(
+        self,
+        text: str,
+        reading_level: str,
+        preset: str,
+        avoid_words: list[str],
+        target_language: Optional[str] = None,
+    ) -> str:
         avoid = ", ".join(avoid_words) if avoid_words else "none"
+        if target_language:
+            lang_instruction = f"IMPORTANT: Output the simplified text in {target_language}."
+        else:
+            lang_instruction = "IMPORTANT: Detect the language of the source text and respond in the SAME language."
         prompt = (
             f"Simplify the following text.\n"
             f"Reading level: {reading_level}. Rules: {LEVEL_RULES.get(reading_level, '')}\n"
             f"Preset style: {PRESET_EXTRA.get(preset, '')}\n"
-            f"Never use these words: {avoid}\n\n"
+            f"Never use these words: {avoid}\n"
+            f"{lang_instruction}\n\n"
             f"TEXT TO SIMPLIFY:\n{text}"
         )
         result = await self._agent.run(prompt)

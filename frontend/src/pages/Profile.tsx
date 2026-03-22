@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usersApi } from "../api/endpoints";
 import { useAuthStore } from "../store/auth";
+import ProgressChart from "../components/ProgressChart";
 
 const PRESETS = [
   { id: "TDAH",      label: "TDAH",       desc: "Bullets cortos y timers", emoji: "⚡" },
@@ -15,7 +16,7 @@ const LEVELS = ["A1", "A2", "B1", "B2", "C1"];
 export default function Profile() {
   const { profile, setProfile } = useAuthStore();
   const navigate = useNavigate();
-  const [preset, setPreset] = useState(profile?.preset ?? "TDAH");
+  const [preset, setPreset] = useState<"Dislexia" | "TDAH" | "Combinado" | "Docente">(profile?.preset ?? "TDAH");
   const [level, setLevel] = useState(profile?.reading_level ?? "A2");
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,7 @@ export default function Profile() {
             {PRESETS.map((p) => (
               <button
                 key={p.id}
-                onClick={() => setPreset(p.id)}
+                onClick={() => setPreset(p.id as "Dislexia" | "TDAH" | "Combinado" | "Docente")}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
                   preset === p.id
                     ? "border-primary bg-primary/5"
@@ -86,6 +87,9 @@ export default function Profile() {
         <button onClick={handleSave} disabled={loading} className="btn-primary w-full">
           {saved ? "✅ Guardado" : loading ? "Guardando..." : "Guardar cambios"}
         </button>
+
+        {/* Progress chart */}
+        <ProgressChart history={profile?.fatigue_history ?? []} />
       </main>
     </div>
   );

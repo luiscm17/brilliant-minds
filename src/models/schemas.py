@@ -99,6 +99,8 @@ class WcagReport(BaseModel):
 class ChatMessage(BaseModel):
     message: str = Field(min_length=1)
     document_ids: Optional[list[str]] = None
+    fatigue_level: int = Field(default=0, ge=0, le=2)  # 0=bien, 1=cansado, 2=muy cansado
+    target_language: Optional[str] = None  # e.g. "english", "español", "português"
 
 
 class SimplifiedResponse(BaseModel):
@@ -110,3 +112,12 @@ class SimplifiedResponse(BaseModel):
     bee_line_overlay: Optional[str] = None
     preset_used: Optional[str] = None
     reading_level_used: Optional[str] = None
+    emoji_summary: Optional[str] = None
+    glossary: list[dict] = []
+    concept_map: Optional[dict] = None
+    searches_performed: list[str] = []  # queries the agent ran autonomously
+
+
+class ShareResponse(BaseModel):
+    share_token: str
+    share_url: str

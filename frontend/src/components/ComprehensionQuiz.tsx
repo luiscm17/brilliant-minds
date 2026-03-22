@@ -10,11 +10,12 @@ interface Question {
 interface Props {
   simplifiedText: string;
   chatId: string;
+  onResimplify?: () => void;
 }
 
 type QuizState = "idle" | "loading" | "active" | "done";
 
-export default function ComprehensionQuiz({ simplifiedText, chatId }: Props) {
+export default function ComprehensionQuiz({ simplifiedText, chatId, onResimplify }: Props) {
   const [state, setState] = useState<QuizState>("idle");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -39,6 +40,8 @@ export default function ComprehensionQuiz({ simplifiedText, chatId }: Props) {
   const submit = () => setSubmitted(true);
 
   const score = questions.filter((q, i) => answers[i] === q.answer).length;
+  const passed = submitted && score >= Math.ceil(questions.length * 2 / 3);
+  const needsResimplify = submitted && !passed && onResimplify;
 
   if (state === "idle") {
     return (
@@ -65,7 +68,7 @@ export default function ComprehensionQuiz({ simplifiedText, chatId }: Props) {
         <h3 className="font-semibold text-textMain">✋ Verificar comprensión</h3>
         {submitted && (
           <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
-            score === questions.length ? "bg-success/20 text-green-700" : "bg-warning/20 text-yellow-700"
+            passed ? "bg-success/20 text-green-700" : "bg-warning/20 text-yellow-700"
           }`}>
             {score}/{questions.length} correctas
           </span>
@@ -73,13 +76,23 @@ export default function ComprehensionQuiz({ simplifiedText, chatId }: Props) {
       </div>
 
       {submitted && (
-        <p className="text-sm text-textSub">
-          {score === questions.length
-            ? "¡Excelente! Entendiste todo el contenido 🌟"
-            : score >= questions.length / 2
-            ? "¡Muy bien! Captaste las ideas principales 👍"
-            : "Está bien, puedes releer el texto con calma 🌿"}
-        </p>
+        <div className="space-y-2">
+          <p className="text-sm text-textSub">
+            {score === questions.length
+              ? "¡Excelente! Entendiste todo el contenido 🌟"
+              : passed
+              ? "¡Muy bien! Captaste las ideas principales 👍"
+              : "Parece que algunas partes no quedaron claras. ¿Quieres una versión aún más simple? 🌿"}
+          </p>
+          {needsResimplify && (
+            <button
+              onClick={onResimplify}
+              className="w-full py-2.5 rounded-xl text-sm font-medium border-2 border-primary text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+            >
+              🔄 Simplificar aún más
+            </button>
+          )}
+        </div>
       )}
 
       <div className="space-y-5">

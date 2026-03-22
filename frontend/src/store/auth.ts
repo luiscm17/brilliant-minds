@@ -19,6 +19,7 @@ export interface UserProfile {
   tone: string;
   avoid_words: string[];
   max_sentence_length: number;
+  fatigue_history?: { date: string; level: string; preset: string }[];
 }
 
 export const useAuthStore = create<AuthState>((set) => ({

@@ -8,6 +8,7 @@ import PomodoroTimer from "../components/PomodoroTimer";
 import VersionTabs from "../components/VersionTabs";
 import { useAuthStore } from "../store/auth";
 import { useChatStore } from "../store/chat";
+import { jsPDF } from "jspdf";
 
 export default function Chat() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,9 @@ export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [fatigueLevel, setFatigueLevel] = useState(0);
+  const [targetLanguage, setTargetLanguage] = useState("");
+  const [isListening, setIsListening] = useState(false);
 
   const navigate = useNavigate();
   const { profile } = useAuthStore();
@@ -38,23 +42,73 @@ export default function Chat() {
     chatsApi.list().then((res) => setChats(res.data)).catch(() => {});
   }, []);
 
+  const handleResimplify = () => {
+    setFatigueLevel((prev) => Math.min(prev + 1, 2));
+    setResult(null);
+    setTimeout(() => handleSend(), 50);
+  };
+
+  const exportPdf = () => {
+    if (!result) return;
+    const doc = new jsPDF();
+    const title = titleParam ? decodeURIComponent(titleParam) : "Documento simplificado";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(title, 15, 20);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    if (result.reading_level_used) {
+      doc.setTextColor(91, 141, 239);
+      doc.text(`Nivel ${result.reading_level_used}  |  ${result.preset_used ?? ""}`, 15, 30);
+      doc.setTextColor(0, 0, 0);
+    }
+    const lines = doc.splitTextToSize(result.simplified_text, 180);
+    doc.text(lines, 15, 42);
+    if (result.glossary && result.glossary.length > 0) {
+      let y = 42 + lines.length * 6 + 10;
+      doc.setFont("helvetica", "bold");
+      doc.text("Glosario", 15, y); y += 8;
+      doc.setFont("helvetica", "normal");
+      result.glossary.forEach((entry) => {
+        const entry_text = `• ${entry.word}: ${entry.definition}`;
+        const wrapped = doc.splitTextToSize(entry_text, 180);
+        doc.text(wrapped, 15, y);
+        y += wrapped.length * 6 + 2;
+      });
+    }
+    doc.save(`${title}.pdf`);
+  };
+
+  const startVoiceInput = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { alert("Tu navegador no soporta dictado por voz. Usa Chrome."); return; }
+    const recognition = new SR();
+    recognition.lang = targetLanguage === "english" ? "en-US" : "es-ES";
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = (e: any) => setMessage((prev) => prev + e.results[0][0].transcript);
+    recognition.start();
+  };
+
   const handleSend = async () => {
     if (!chatId || !message.trim()) return;
     setLoading(true);
     setError("");
     setResult(null);
     setDocenteResults(null);
+    const lang = targetLanguage || undefined;
     try {
       if (isDocente) {
         const levels = ["A1", "A2", "B1"];
         const responses = await Promise.all(
           levels.map((level) =>
-            chatsApi.sendMessage(chatId, `[Nivel ${level}] ${message}`, docId ? [docId] : undefined)
+            chatsApi.sendMessage(chatId, `[Nivel ${level}] ${message}`, docId ? [docId] : undefined, fatigueLevel, lang)
           )
         );
         setDocenteResults(responses.map((r) => r.data));
       } else {
-        const res = await chatsApi.sendMessage(chatId, message, docId ? [docId] : undefined);
+        const res = await chatsApi.sendMessage(chatId, message, docId ? [docId] : undefined, fatigueLevel, lang);
         setResult(res.data);
         addMessage(chatId, { role: "user", text: message, timestamp: new Date().toISOString() });
         addMessage(chatId, { role: "assistant", text: res.data.simplified_text, result: res.data, timestamp: new Date().toISOString() });
@@ -235,16 +289,69 @@ export default function Chat() {
         {/* Input area */}
         {!result && (
           <div className="card space-y-3">
+            {/* Fatigue selector */}
+            <div>
+              <p className="text-xs font-medium text-textSub mb-2">¿Cómo te sientes hoy?</p>
+              <div className="flex gap-2">
+                {[
+                  { level: 0, label: "Bien", emoji: "😊" },
+                  { level: 1, label: "Cansado", emoji: "😴" },
+                  { level: 2, label: "Muy cansado", emoji: "🥱" },
+                ].map(({ level, label, emoji }) => (
+                  <button
+                    key={level}
+                    onClick={() => setFatigueLevel(level)}
+                    className={`flex-1 py-2 rounded-xl text-xs border transition-all ${
+                      fatigueLevel === level
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-gray-200 text-textSub hover:border-primary/40"
+                    }`}
+                  >
+                    {emoji} {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Language selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-textSub font-medium whitespace-nowrap">🌐 Idioma salida:</span>
+              <select
+                className="input text-sm py-1 flex-1"
+                value={targetLanguage}
+                onChange={(e) => setTargetLanguage(e.target.value)}
+              >
+                <option value="">Auto-detectar</option>
+                <option value="español">Español</option>
+                <option value="english">English</option>
+                <option value="português">Português</option>
+                <option value="français">Français</option>
+                <option value="deutsch">Deutsch</option>
+              </select>
+            </div>
+
             <label className="block text-sm font-medium text-textSub">
               O escribe tu instrucción:
             </label>
-            <textarea
-              className="input resize-none"
-              rows={3}
-              placeholder="Ej: Simplifica el contrato con frases cortas y bullets..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
+            <div className="relative">
+              <textarea
+                className="input resize-none pr-12"
+                rows={3}
+                placeholder="Ej: Simplifica el contrato con frases cortas y bullets..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={startVoiceInput}
+                title="Dictar por voz"
+                className={`absolute bottom-3 right-3 text-lg p-1 rounded-full transition-all ${
+                  isListening ? "text-red-500 animate-pulse" : "text-textSub hover:text-primary"
+                }`}
+              >
+                🎙️
+              </button>
+            </div>
             <button
               onClick={handleSend}
               disabled={loading || !message.trim() || !chatId}
@@ -282,7 +389,12 @@ export default function Chat() {
         {/* Result — normal */}
         {result && (
           <>
-            <SimplifiedView result={result} chatId={chatId ?? ""} />
+            <SimplifiedView
+              result={result}
+              chatId={chatId ?? ""}
+              onResimplify={handleResimplify}
+              onExportPdf={exportPdf}
+            />
             <button
               onClick={() => { setResult(null); setMessage(""); }}
               className="btn-secondary w-full"

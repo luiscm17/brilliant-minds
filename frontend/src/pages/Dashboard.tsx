@@ -6,13 +6,14 @@ import { useAuthStore } from "../store/auth";
 import { usersApi } from "../api/endpoints";
 import AccessibilityBar from "../components/AccessibilityBar";
 import { useChatStore } from "../store/chat";
-import type { ChatEntry } from "../store/chat";
+import OnboardingModal from "../components/OnboardingModal";
 
 export default function Dashboard() {
   const [documents, setDocuments] = useState<UserDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { setProfile, profile, logout } = useAuthStore();
   const { chats, setChats } = useChatStore();
   const navigate = useNavigate();
@@ -21,6 +22,9 @@ export default function Dashboard() {
     usersApi.getMe().then((res) => setProfile(res.data)).catch(() => {});
     documentsApi.list().then((res) => setDocuments(res.data.documents)).finally(() => setLoading(false));
     chatsApi.list().then((res) => setChats(res.data)).catch(() => {});
+    if (!localStorage.getItem("onboarding_done")) {
+      setShowOnboarding(true);
+    }
   }, []);
 
   const handleFile = async (file: File) => {
@@ -41,13 +45,9 @@ export default function Dashboard() {
     setDocuments((d) => d.filter((doc) => doc.document_id !== id));
   };
 
-  const handleChat = async (documentId: string) => {
-    const res = await chatsApi_create();
-    navigate(`/chat/${res.data.chat_id}?doc=${documentId}`);
-  };
-
   return (
     <div className="min-h-screen bg-bg flex flex-col">
+      {showOnboarding && <OnboardingModal onDone={() => setShowOnboarding(false)} />}
       {/* Header */}
       <header className="bg-surface border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -99,7 +99,7 @@ export default function Dashboard() {
           <div className="mb-6">
             <h2 className="text-lg font-semibold mb-3">Chats recientes</h2>
             <ul className="space-y-2">
-              {chats.slice(0, 5).map((chat) => (
+              {chats.slice(0, 5).map((chat: any) => (
                 <li key={chat.chat_id}>
                   <button
                     onClick={() => navigate(`/chat/${chat.chat_id}`)}
@@ -170,8 +170,3 @@ export default function Dashboard() {
   );
 }
 
-// inline helper to avoid circular import
-async function chatsApi_create() {
-  const { api } = await import("../api/client");
-  return api.post("/chats", { title: "Nueva simplificación" });
-}

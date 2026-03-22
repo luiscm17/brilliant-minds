@@ -31,13 +31,33 @@ export const documentsApi = {
 export const chatsApi = {
   list: () => api.get("/chats"),
   create: (title?: string) => api.post("/chats", { title }),
-  sendMessage: (chatId: string, message: string, documentIds?: string[]) =>
-    api.post(`/chats/${chatId}/messages`, { message, document_ids: documentIds }),
+  sendMessage: (
+    chatId: string,
+    message: string,
+    documentIds?: string[],
+    fatigueLevel?: number,
+    targetLanguage?: string,
+  ) =>
+    api.post(`/chats/${chatId}/messages`, {
+      message,
+      document_ids: documentIds,
+      fatigue_level: fatigueLevel ?? 0,
+      target_language: targetLanguage ?? null,
+    }),
   getComprehension: (chatId: string, simplifiedText: string) =>
     api.post(`/chats/${chatId}/comprehension`, { simplified_text: simplifiedText }),
   updateTitle: (chatId: string, title: string) =>
     api.patch(`/chats/${chatId}`, { title }),
   deleteChat: (chatId: string) => api.delete(`/chats/${chatId}`),
+  shareResult: (chatId: string, result: SimplifiedResponse) =>
+    api.post(`/chats/${chatId}/share`, result),
+  getConceptMap: (chatId: string, simplifiedText: string) =>
+    api.post(`/chats/${chatId}/concept-map`, { simplified_text: simplifiedText }),
+};
+
+// ── Shared (public, no auth) ─────────────────────────────────────────────────
+export const sharedApi = {
+  get: (token: string) => api.get(`/shared/${token}`),
 };
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -57,6 +77,10 @@ export interface SimplifiedResponse {
   audio_url?: string;
   preset_used?: string;
   reading_level_used?: string;
+  emoji_summary?: string;
+  glossary?: { word: string; definition: string }[];
+  concept_map?: { nodes: { id: string; label: string }[]; edges: { source: string; target: string }[] } | null;
+  searches_performed?: string[];
 }
 
 export interface UserDocument {

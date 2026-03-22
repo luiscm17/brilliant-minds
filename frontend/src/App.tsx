@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
+import Shared from "./pages/Shared";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/chat/new"    element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/profile"     element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/shared/:token" element={<Shared />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>

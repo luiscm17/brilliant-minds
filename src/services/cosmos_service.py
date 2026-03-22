@@ -171,6 +171,60 @@ async def delete_chat(chat_id: str, user_id: str) -> bool:
     return True
 
 
+async def create_share(user_id: str, data: dict) -> str:
+    """Store a simplified result as a public shareable snapshot. Returns the share token."""
+    share_token = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    item = {
+        "id": share_token,
+        "user_id": "public",
+        "owner_id": user_id,
+        "data": data,
+        "created_at": now,
+    }
+    db = _db(_client())
+    # Auto-create shares container if it doesn't exist
+    try:
+        container = db.get_container_client(CosmosDBSettings.SHARES_CONTAINER)
+        await container.create_item(item)
+    except Exception:
+        await db.create_container_if_not_exists(
+            id=CosmosDBSettings.SHARES_CONTAINER,
+            partition_key={"paths": ["/user_id"], "kind": "Hash"},
+        )
+        container = db.get_container_client(CosmosDBSettings.SHARES_CONTAINER)
+        await container.create_item(item)
+    return share_token
+
+
+async def get_share(share_token: str) -> Optional[dict]:
+    """Retrieve a public share by token."""
+    try:
+        container = _db(_client()).get_container_client(CosmosDBSettings.SHARES_CONTAINER)
+        item = await container.read_item(item=share_token, partition_key="public")
+        return item.get("data")
+    except Exception:
+        return None
+
+
+async def save_progress(user_id: str, reading_level: str, preset: str) -> None:
+    """Append a reading session to the user's fatigue_history for progress tracking."""
+    container = _db(_client()).get_container_client(CosmosDBSettings.USERS_CONTAINER)
+    try:
+        item = await container.read_item(item=user_id, partition_key=user_id)
+        history: list = item.get("fatigue_history", [])
+        history.append({
+            "date": datetime.now(timezone.utc).isoformat(),
+            "level": reading_level,
+            "preset": preset,
+        })
+        # Keep last 50 entries
+        item["fatigue_history"] = history[-50:]
+        await container.replace_item(item=user_id, body=item)
+    except Exception:
+        pass
+
+
 async def create_chat(user_id: str, title: Optional[str]) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     item = {

@@ -59,6 +59,7 @@ class CosmosDBSettings:
     USERS_CONTAINER: str = os.getenv("COSMOS_USERS_CONTAINER", "users")
     DOCUMENTS_CONTAINER: str = os.getenv("COSMOS_DOCUMENTS_CONTAINER", "documents")
     CHATS_CONTAINER: str = os.getenv("COSMOS_CHATS_CONTAINER", "chats")
+    SHARES_CONTAINER: str = os.getenv("COSMOS_SHARES_CONTAINER", "shares")
 
     @classmethod
     def validate(cls) -> None:

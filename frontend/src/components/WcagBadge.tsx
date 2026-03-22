@@ -3,8 +3,6 @@ interface Props {
 }
 
 export default function WcagBadge({ report }: Props) {
-  const color = report.score >= 90 ? "success" : report.score >= 70 ? "warning" : "warning";
-
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm
       ${report.passed ? "bg-success/10 text-green-700" : "bg-warning/10 text-yellow-700"}`}>

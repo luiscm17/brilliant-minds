@@ -3,11 +3,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.core.dependencies import get_current_user_id
-from src.models.schemas import ChatCreate, ChatResponse, ChatMessage, SimplifiedResponse
-from src.services import cosmos_service, search_service
+from src.models.schemas import ChatCreate, ChatResponse, ChatMessage, SimplifiedResponse, ShareResponse
+from src.services import cosmos_service
 from src.agents.adaptation_agent import run_adaptation_pipeline
 from src.agents.comprehension_agent import comprehension_agent
+from src.agents.concept_agent import concept_agent
 from pydantic import BaseModel, Field
+import os
 
 class ComprehensionRequest(BaseModel):
     simplified_text: str
@@ -72,24 +74,42 @@ async def send_message(
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found")
 
-    # 2. Retrieve RAG context from referenced documents
-    rag_chunks: list[str] = []
-    if body.document_ids:
-        for _ in body.document_ids:
-            chunks = await search_service.search_context(body.message, user_id, top_k=3)
-            rag_chunks.extend(chunks)
-    else:
-        # Search across all user documents
-        rag_chunks = await search_service.search_context(body.message, user_id, top_k=5)
-
-    # 3. Run the full adaptation pipeline
+    # 2. Run the full Agentic RAG + adaptation pipeline
+    # The AgenticRAGAgent decides autonomously when and what to search
     response = await run_adaptation_pipeline(
         message=body.message,
         profile=profile,
-        rag_chunks=rag_chunks,
+        user_id=user_id,
+        fatigue_level=body.fatigue_level,
+        target_language=body.target_language,
     )
 
+    # Save progress for history chart
+    await cosmos_service.save_progress(user_id, response.reading_level_used or profile.reading_level, profile.preset)
+
     return response
+
+
+@router.post("/{chat_id}/share", response_model=ShareResponse)
+async def share_result(
+    chat_id: str,
+    body: SimplifiedResponse,
+    user_id: str = Depends(get_current_user_id),
+):
+    token = await cosmos_service.create_share(user_id, body.model_dump())
+    base_url = os.getenv("FRONTEND_URL", "http://localhost:5174")
+    return ShareResponse(share_token=token, share_url=f"{base_url}/shared/{token}")
+
+
+@router.post("/{chat_id}/concept-map")
+async def get_concept_map(
+    chat_id: str,
+    body: ComprehensionRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    agent = await concept_agent()
+    result = await agent.run(body.simplified_text)
+    return result
 
 
 @router.delete("/{chat_id}", status_code=204)
