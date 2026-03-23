@@ -4,7 +4,6 @@ Provides integration with Azure AI Foundry's agent framework,
 enabling creation and management of AI agents.
 """
 
-import os
 from typing import Any
 from agent_framework.azure import AzureAIProjectAgentProvider
 from azure.ai.projects.aio import AIProjectClient
