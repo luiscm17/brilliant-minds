@@ -11,7 +11,7 @@ from src.agents.teacher_agent import teacher_agent
 async def main():
     teacher = await teacher_agent()
 
-    question = "Can you explain what a neural network is?"
+    question = "What approach does the Artificial Neural Network Model for Prediction of Drilling Rate use to estimate drilling speed?"
     response = await teacher.run(question)
 
     print("User:", question)
