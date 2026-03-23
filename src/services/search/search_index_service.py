@@ -1,6 +1,6 @@
 """Service to configure and provide Azure SearchIndexClient and index name."""
 
-from azure.core.credentials import AzureKeyCredential
+from azure.identity import DefaultAzureCredential
 from azure.search.documents.indexes import SearchIndexClient
 
 from src.config.settings import AISearchSettings
@@ -25,7 +25,7 @@ class SearchIndexService:
 
         self._client_index = SearchIndexClient(
             endpoint=ai_search_endpoint,
-            credential=AzureKeyCredential(ai_search_api_key),
+            credential=DefaultAzureCredential(),
         )
         self._index_name = index_name
 
