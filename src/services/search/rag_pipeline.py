@@ -6,6 +6,7 @@ from src.config.settings import (
 )
 from src.services.search.knowledge_base_service import KnowledgeBaseService
 from src.services.search.knowledge_source_service import KnowledgeSourceService
+from src.services.search.mcp_connection import create_or_update_mcp_connection
 
 
 def run_pipeline(name: str, description: str) -> None:
@@ -17,8 +18,10 @@ def run_pipeline(name: str, description: str) -> None:
     kb_service = KnowledgeBaseService()
     kb_service.create_and_deploy(name)
 
+    connection_id = create_or_update_mcp_connection()
     print(f"Knowledge Source '{name}' ingested successfully.")
     print("Knowledge Base deployed with documented retrieval settings.")
+    print(f"Project connection synced: {connection_id}")
 
 
 if __name__ == "__main__":

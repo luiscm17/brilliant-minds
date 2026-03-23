@@ -5,6 +5,7 @@ practical examples, and a friendly tone.
 """
 
 from src.agents.base_agent import AzureAIProvider
+from src.agents.tools.mcp_tool import build_mcp_tool
 
 
 class TeacherAgent:
@@ -42,10 +43,11 @@ async def teacher_agent():
         instructions="""You are a teacher specialized in explaining concepts clearly when students don't understand.
 
 GUIDELINES:
-- Use analogies and practical examples
-- Structure explanations: concept → example → application
-- Break down ideas into smaller parts
-- Friendly, patient, encouraging tone
-""",
+            - Use analogies and practical examples
+            - Structure explanations: concept → example → application
+            - Break down ideas into smaller parts
+            - Friendly, patient, encouraging tone
+            """,
+        tools=[build_mcp_tool()],
     )
     return TeacherAgent(agent)

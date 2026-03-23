@@ -142,7 +142,7 @@ class AzureOpenAISettings:
         if not aoai_deployment_name:
             raise ValueError("AOAI_DEPLOYMENT_NAME is not configured")
         return aoai_deployment_name
-    
+
     @classmethod
     def get_model_name(cls) -> str:
         aoai_model_name = cls._AOAI_MODEL_NAME
@@ -250,3 +250,38 @@ class KnowledgeBaseSettings:
         cls.get_description()
         cls.get_answer_instructions()
         cls.get_retrieval_instructions()
+
+
+class MCPConnectionSettings:
+    """Configuration for exposing the knowledge base as an MCP tool."""
+
+    _PROJECT_RESOURCE_ID: Optional[str] = os.getenv("AI_PROJECT_RESOURCE_ID")
+    _PROJECT_CONNECTION_NAME: Optional[str] = os.getenv(
+        "AI_PROJECT_CONNECTION_NAME", "rag-mcp-connection"
+    )
+
+    @classmethod
+    def get_project_resource_id(cls) -> str:
+        resource_id = cls._PROJECT_RESOURCE_ID
+        if not resource_id:
+            raise ValueError("AI_PROJECT_RESOURCE_ID is not configured")
+        return resource_id
+
+    @classmethod
+    def get_project_connection_name(cls) -> str:
+        connection_name = cls._PROJECT_CONNECTION_NAME
+        if not connection_name:
+            raise ValueError("PROJECT_CONNECTION_NAME is not configured")
+        return connection_name
+
+    @classmethod
+    def get_project_connection_id(cls) -> str:
+        resource_id = cls.get_project_resource_id()
+        connection_name = cls.get_project_connection_name()
+        return f"{resource_id}/connections/{connection_name}"
+
+    @classmethod
+    def get_mcp_endpoint(cls) -> str:
+        search_endpoint = AISearchSettings.get_endpoint()
+        kb_name = KnowledgeBaseSettings.get_name()
+        return f"{search_endpoint}/knowledgebases/{kb_name}/mcp?api-version=2025-11-01-Preview"

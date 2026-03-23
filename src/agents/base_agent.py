@@ -5,7 +5,7 @@ enabling creation and management of AI agents.
 """
 
 import os
-from typing import Any
+from typing import Any, Iterable
 from agent_framework.azure import AzureAIProjectAgentProvider
 from azure.ai.projects.aio import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
@@ -31,7 +31,7 @@ class AzureAIProvider:
         self,
         name: str,
         instructions: str,
-        tools: list[Any] | None = None,
+        tools: Iterable[Any] | None = None,
     ) -> Any:
         """Build and return an Azure AI agent.
 
