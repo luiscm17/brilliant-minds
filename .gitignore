@@ -181,6 +181,7 @@ cython_debug/
 .azure/
 *.azurePub
 .azurite/
+.agents/
 
 # Terraform
 *.tfstate
