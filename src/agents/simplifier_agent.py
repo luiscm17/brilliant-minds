@@ -15,6 +15,10 @@ PRESET_EXTRA = {
     "Dislexia": "Use very short sentences. Leave space between ideas. Avoid dense paragraphs.",
     "Combinado": "Use bullet points AND very short sentences. Maximum clarity and calm tone.",
     "Docente": "Preserve multiple reading levels. Generate a brief summary first, then the full simplified text.",
+    "adhd": "Format output as bullet points. Highlight deadlines and action items. Keep each point short.",
+    "dyslexia": "Use very short sentences. Leave space between ideas. Avoid dense paragraphs.",
+    "combined": "Use bullet points AND very short sentences. Maximum clarity and calm tone.",
+    "custom": "Keep structure clear, calm, and easy to scan.",
 }
 
 
@@ -22,13 +26,26 @@ class SimplifierAgent:
     def __init__(self, agent):
         self._agent = agent
 
-    async def run(self, text: str, reading_level: str, preset: str, avoid_words: list[str]) -> str:
+    async def run(
+        self,
+        text: str,
+        reading_level: str,
+        preset: str,
+        avoid_words: list[str],
+        target_language: str | None = None,
+    ) -> str:
         avoid = ", ".join(avoid_words) if avoid_words else "none"
+        language_instruction = (
+            f"Respond in {target_language}."
+            if target_language
+            else "Respond in the same language as the source text."
+        )
         prompt = (
             f"Simplify the following text.\n"
             f"Reading level: {reading_level}. Rules: {LEVEL_RULES.get(reading_level, '')}\n"
             f"Preset style: {PRESET_EXTRA.get(preset, '')}\n"
             f"Never use these words: {avoid}\n\n"
+            f"{language_instruction}\n\n"
             f"TEXT TO SIMPLIFY:\n{text}"
         )
         result = await self._agent.run(prompt)

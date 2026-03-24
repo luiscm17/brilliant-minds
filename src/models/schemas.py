@@ -1,112 +1,140 @@
-"""Pydantic schemas for DocSimplify API request/response models."""
+"""Pydantic schemas for the API contract consumed by the frontend."""
 
-from datetime import datetime
 from typing import Literal, Optional
-from pydantic import BaseModel, EmailStr, Field
+
+from pydantic import BaseModel, Field, ConfigDict
+
+
+class ApiModel(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
 
 
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
 
-class UserCreate(BaseModel):
-    email: EmailStr
+
+class UserCreate(ApiModel):
+    email: str
     password: str = Field(min_length=6)
     name: str = Field(min_length=1)
 
 
-class UserLogin(BaseModel):
-    email: EmailStr
+class UserLogin(ApiModel):
+    email: str
     password: str
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user_id: str
+class AuthUser(ApiModel):
+    user_id: str = Field(alias="userId")
+    email: str
+    name: str
+
+
+class AuthResponse(ApiModel):
+    token: str
+    user_id: str = Field(alias="userId")
+    user: AuthUser
 
 
 # ---------------------------------------------------------------------------
 # Users / Profile
 # ---------------------------------------------------------------------------
 
-ReadingLevel = Literal["A1", "A2", "B1", "B2", "C1"]
-Preset = Literal["Dislexia", "TDAH", "Combinado", "Docente"]
-Tone = Literal["calm_supportive", "neutral", "encouraging"]
+
+ReadingLevel = Literal["A1", "A2", "B1", "C1"]
+AccessibilityPreset = Literal["dyslexia", "adhd", "combined", "custom"]
+Tone = Literal["calm_supportive", "neutral_clear"]
+CognitivePriority = Literal[
+    "focus",
+    "calm",
+    "contrast",
+    "short_sentences",
+    "step_by_step",
+]
 
 
-class UserProfile(BaseModel):
-    id: str
-    user_id: str
-    email: str
-    name: str
-    reading_level: ReadingLevel = "A2"
-    max_sentence_length: int = 12
-    tone: Tone = "calm_supportive"
-    avoid_words: list[str] = []
-    preset: Preset = "TDAH"
-    fatigue_history: list[dict] = []
-    created_at: Optional[str] = None
+class UserProfile(ApiModel):
+    has_adhd: bool = Field(alias="hasAdhd")
+    has_dyslexia: bool = Field(alias="hasDyslexia")
+    reading_level: ReadingLevel = Field(alias="readingLevel")
+    preset: AccessibilityPreset
+    max_sentence_length: int = Field(alias="maxSentenceLength", ge=5, le=30)
+    tone: Tone
+    priorities: list[CognitivePriority] = Field(default_factory=list)
 
 
-class UserProfileUpdate(BaseModel):
-    reading_level: Optional[ReadingLevel] = None
-    max_sentence_length: Optional[int] = Field(default=None, ge=5, le=30)
+class UserProfileUpdate(ApiModel):
+    has_adhd: Optional[bool] = Field(default=None, alias="hasAdhd")
+    has_dyslexia: Optional[bool] = Field(default=None, alias="hasDyslexia")
+    reading_level: Optional[ReadingLevel] = Field(default=None, alias="readingLevel")
+    preset: Optional[AccessibilityPreset] = None
+    max_sentence_length: Optional[int] = Field(
+        default=None, alias="maxSentenceLength", ge=5, le=30
+    )
     tone: Optional[Tone] = None
-    avoid_words: Optional[list[str]] = None
-    preset: Optional[Preset] = None
+    priorities: Optional[list[CognitivePriority]] = None
 
 
 # ---------------------------------------------------------------------------
 # Documents
 # ---------------------------------------------------------------------------
 
-class DocumentResponse(BaseModel):
-    document_id: str
+
+DocumentStatus = Literal["uploaded", "processing", "completed", "error"]
+
+
+class DocumentItem(ApiModel):
+    document_id: str = Field(alias="documentId")
     filename: str
-    status: str
-    user_id: str
-    blob_url: Optional[str] = None
-    uploaded_at: str
+    status: DocumentStatus
 
 
-class DocumentList(BaseModel):
-    documents: list[DocumentResponse]
-    total: int
+class DocumentUploadResult(DocumentItem):
+    success: bool = True
 
 
 # ---------------------------------------------------------------------------
 # Chats
 # ---------------------------------------------------------------------------
 
-class ChatCreate(BaseModel):
+
+class ChatCreate(ApiModel):
     title: Optional[str] = None
 
 
-class ChatResponse(BaseModel):
-    chat_id: str
-    title: Optional[str] = None
-    user_id: str
-    created_at: str
+class CreateChatResponse(ApiModel):
+    chat_id: str = Field(alias="chatId")
 
 
-class WcagReport(BaseModel):
+class ChatMessage(ApiModel):
+    message: str = Field(min_length=1)
+    document_ids: Optional[list[str]] = Field(default=None, alias="documentIds")
+    fatigue_level: int = Field(default=0, ge=0, le=2, alias="fatigueLevel")
+    target_language: Optional[str] = Field(default=None, alias="targetLanguage")
+
+
+class ChatResponse(ApiModel):
+    original_message: Optional[str] = Field(default=None, alias="originalMessage")
+    simplified_text: str = Field(alias="simplifiedText")
+    explanation: str
+    tone: str
+    audio_url: Optional[str] = Field(default=None, alias="audioUrl")
+    bee_line_overlay: Optional[bool] = Field(default=None, alias="beeLineOverlay")
+    wcag_report: Optional[str] = Field(default=None, alias="wcagReport")
+    preset_used: Optional[str] = Field(default=None, alias="presetUsed")
+    reading_level_used: Optional[str] = Field(default=None, alias="readingLevelUsed")
+    emoji_summary: Optional[str] = Field(default=None, alias="emojiSummary")
+    glossary: list[dict] = Field(default_factory=list)
+    searches_performed: list[str] = Field(default_factory=list, alias="searchesPerformed")
+
+
+class ShareResponse(ApiModel):
+    share_token: str = Field(alias="shareToken")
+    share_url: str = Field(alias="shareUrl")
+
+
+class WcagReport(ApiModel):
     score: int = Field(ge=0, le=100)
     passed: bool
-    issues: list[str] = []
-
-
-class ChatMessage(BaseModel):
-    message: str = Field(min_length=1)
-    document_ids: Optional[list[str]] = None
-
-
-class SimplifiedResponse(BaseModel):
-    original_message: str
-    simplified_text: str
-    explanation: str
-    wcag_report: WcagReport
-    audio_url: Optional[str] = None
-    bee_line_overlay: Optional[str] = None
-    preset_used: Optional[str] = None
-    reading_level_used: Optional[str] = None
+    issues: list[str] = Field(default_factory=list)

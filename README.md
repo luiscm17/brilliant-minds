@@ -1,122 +1,109 @@
 # DocSimplify
 
-AI assistant to simplify documents designed for people with dyslexia and ADHD.
+Asistente de IA para simplificar documentos y reducir carga cognitiva en personas con dislexia y TDAH.
 
-## 🎯 Purpose
+## Estado actual
 
-Transform dense documents (PDF, Word, texts) into clear and accessible versions with:
+- Frontend en `Next.js 16` con App Router
+- Backend en `FastAPI`
+- El frontend puede funcionar en modo demo con mocks o conectado a la API real
 
-- Adjustable reading levels (A1-C1)
-- Bullet point summaries
-- BeeLine Reader (alternating line colors)
-- OpenDyslexic font support
-- Calm explanations of each change
-- WCAG 2.2 compliance report
+## Levantar el proyecto
 
-## 🚀 Running locally
-
-### Requirements
+### Requisitos
 
 - Python 3.13
 - Node.js 18+
-- Azure CLI
 
-### 1. Backend
+### Backend
 
 ```bash
-# Install dependencies
-py -3.13 -m pip install -r requirements.txt
-
-# Start the API (port 8001)
-py -3.13 -m uvicorn src.main:app --port 8001 --reload
+py -3.13 -m pip install -e .
+py -3.13 -m uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-API available at: `http://localhost:8001`
-Interactive docs at: `http://localhost:8001/docs`
+API: `http://localhost:8001`
 
-### 2. Frontend
+Swagger: `http://localhost:8001/docs`
+
+### Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start dev server
 npm run dev
 ```
 
-Frontend available at: `http://localhost:5173` (or the port Vite assigns)
+Frontend: `http://localhost:3000`
 
-### Environment variables
+## Modos del frontend
 
-Copy `.env.example` to `.env` and fill in the values, or run `deploy.sh` to provision Azure resources and generate the `.env` automatically.
+### Demo local con mocks
 
-| Variable | Description |
-|---|---|
-| `AZURE_OPENAI_ENDPOINT` | Azure AI Foundry endpoint |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key |
-| `AZURE_OPENAI_CHAT_MODEL` | Chat model deployment name (e.g. `gpt-4o-mini`) |
-| `AZURE_OPENAI_EMBEDDING_MODEL` | Embedding model deployment name |
-| `COSMOS_ENDPOINT` | Cosmos DB endpoint |
-| `COSMOS_KEY` | Cosmos DB primary key |
-| `COSMOS_DATABASE` | Database name |
-| `AZURE_SEARCH_ENDPOINT` | AI Search endpoint |
-| `AZURE_SEARCH_KEY` | AI Search admin key |
-| `AZURE_STORAGE_CONNECTION_STRING` | Blob Storage connection string |
-| `DOCUMENT_INTELLIGENCE_ENDPOINT` | Document Intelligence endpoint |
-| `DOCUMENT_INTELLIGENCE_KEY` | Document Intelligence key |
-
-## 🏗️ Architecture
-
-### Frontend
-- **React + Vite + Tailwind CSS**
-- OpenDyslexic font, BeeLine Reader, Pomodoro timer
-- WCAG 2.2 compliant
-
-### Backend (Multi-Agent System)
-- **FastAPI** on Python 3.13
-- **Adaptation Agent** — orchestrates the full simplification pipeline
-- **Parser Agent** — extracts text with Azure Document Intelligence
-- **Teacher Agent** — simplifies and adapts text with GPT-4o-mini
-- **Comprehension Agent** — generates comprehension questions
-- RAG via Azure AI Search
-
-### Azure Services
-| Service | Purpose |
-|---|---|
-| Azure AI Foundry | GPT-4o-mini + text-embedding-ada-002 |
-| Azure Cosmos DB | Users, documents metadata, chat history |
-| Azure Blob Storage | Raw document files |
-| Azure AI Search | RAG index for document chunks |
-| Azure Document Intelligence | PDF/Word text extraction |
-
-## 🏠 Project structure
-
-```
-demo-group3/
-├── src/
-│   ├── agents/        # Multi-agent pipeline
-│   ├── api/           # FastAPI routers
-│   ├── config/        # Settings / env vars
-│   ├── models/        # Pydantic schemas
-│   └── services/      # Cosmos DB, Search, Blob
-├── frontend/          # React + Tailwind
-└── infra/             # Bicep infrastructure
-```
-
-## ☁️ Deploy Azure infrastructure
+Es el modo por defecto. Sirve para revisar el flujo visual completo sin depender del backend ni de Azure.
 
 ```bash
-# Provisions all Azure resources and generates .env
-bash deploy.sh
+cd frontend
+npm run dev
 ```
 
-## 👥 User presets
+### Frontend conectado al backend real
 
-| Preset | Description |
-|---|---|
-| **TDAH** | Short sentences, bullets, Pomodoro timer |
-| **Dislexia** | OpenDyslexic font, BeeLine, high contrast |
-| **Combinado** | Both adaptations combined |
-| **Docente** | Generates 3 versions (A1 / A2 / B1) for teachers |
+Crea `frontend/.env.local` con:
+
+```bash
+NEXT_PUBLIC_USE_MOCK_API=false
+NEXT_PUBLIC_API_URL=http://localhost:8001/api/v1
+```
+
+Luego levanta backend y frontend en paralelo.
+
+## Variables de entorno del backend
+
+Copia `.env.example` a `.env` y completa al menos:
+
+- `JWT_SECRET_KEY`
+- `COSMOS_ENDPOINT`
+- `COSMOS_KEY`
+- `AZURE_STORAGE_CONNECTION_STRING`
+- `AZURE_SEARCH_ENDPOINT`
+- `AZURE_SEARCH_KEY`
+- `OPENAI_ENDPOINT`
+- `OPENAI_API_KEY`
+- `AI_MODEL_DEPLOYMENT_NAME`
+- `DOCUMENT_INTELLIGENCE_ENDPOINT`
+- `DOCUMENT_INTELLIGENCE_KEY`
+
+Notas:
+
+- Sin `COSMOS_*` no funcionarán registro, login, perfil, documentos ni chats reales.
+- Sin `AZURE_STORAGE_CONNECTION_STRING` la subida de archivos no podrá usar Blob Storage.
+- Sin `AZURE_SEARCH_*` el grounding de RAG no tendrá índice real.
+- Sin `DOCUMENT_INTELLIGENCE_*` solo habrá fallback básico para texto plano.
+
+## Arquitectura
+
+### Frontend
+
+- `Next.js + React + Tailwind CSS`
+- Landing, login, onboarding, dashboard, documentos y chat
+
+### Backend
+
+- `FastAPI` sobre Python 3.13
+- Endpoints en `/api/v1/auth`, `/api/v1/users`, `/api/v1/documents`, `/api/v1/chats`
+- Pipeline de simplificación y grounding con servicios Azure
+
+## Estructura
+
+```text
+demo-group3/
+|-- src/
+|   |-- agents/
+|   |-- api/
+|   |-- config/
+|   |-- models/
+|   `-- services/
+|-- frontend/
+`-- infra/
+```
