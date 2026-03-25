@@ -3,8 +3,10 @@
 Registers all routers under /api/v1 and configures CORS and middleware.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List
+from src.config.settings import CORS_ORIGINS
 
 from src.api.v1.routers import auth, users, documents, chats, shared
 
@@ -16,17 +18,22 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
-app.include_router(auth.router, prefix="/api/v1")
-app.include_router(users.router, prefix="/api/v1")
-app.include_router(documents.router, prefix="/api/v1")
-app.include_router(chats.router, prefix="/api/v1")
-app.include_router(shared.router, prefix="/api/v1")
+api_router = APIRouter(prefix="/api/v1", tags=["v1"])
+for router in (
+    auth.router,
+    users.router,
+    documents.router,
+    chats.router,
+    shared.router,
+):
+    api_router.include_router(router)
+app.include_router(api_router)
 
 
 @app.get("/health")

@@ -1,13 +1,19 @@
 """Application settings loaded from environment variables."""
 
 import os
-from typing import Optional
+from typing import Optional, List
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+CORS_ORIGINS: List[str] = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 
 def _first_env(*names: str, default: Optional[str] = None) -> Optional[str]:
@@ -90,11 +96,14 @@ class AzureSearchSettings:
 
     ENDPOINT: Optional[str] = _first_env("AZURE_SEARCH_ENDPOINT", "AI_SEARCH_ENDPOINT")
     KEY: Optional[str] = _first_env("AZURE_SEARCH_KEY", "AI_SEARCH_KEY")
-    INDEX: str = _first_env(
-        "AZURE_SEARCH_INDEX",
-        "AI_SEARCH_INDEX_NAME",
-        default="documents-index",
-    ) or "documents-index"
+    INDEX: str = (
+        _first_env(
+            "AZURE_SEARCH_INDEX",
+            "AI_SEARCH_INDEX_NAME",
+            default="documents-index",
+        )
+        or "documents-index"
+    )
 
     @classmethod
     def validate(cls) -> None:
@@ -109,27 +118,39 @@ class OpenAISettings:
 
     ENDPOINT: Optional[str] = _first_env("OPENAI_ENDPOINT", "AOAI_ENDPOINT")
     API_KEY: Optional[str] = _first_env("OPENAI_API_KEY", "AOAI_KEY")
-    EMBEDDING_MODEL: str = _first_env(
-        "OPENAI_EMBEDDING_MODEL",
-        "EMBEDDING_MODEL_NAME",
-        default="text-embedding-ada-002",
-    ) or "text-embedding-ada-002"
-    EMBEDDING_DEPLOYMENT: str = _first_env(
-        "OPENAI_EMBEDDING_DEPLOYMENT",
-        "EMBEDDING_MODEL_DEPLOYMENT_NAME",
-        "OPENAI_EMBEDDING_MODEL",
-        default="text-embedding-ada-002",
-    ) or "text-embedding-ada-002"
-    CHAT_MODEL: str = _first_env(
-        "AI_MODEL_DEPLOYMENT_NAME",
-        "AOAI_DEPLOYMENT_NAME",
-        default="gpt-4o-mini",
-    ) or "gpt-4o-mini"
-    MODEL_NAME: str = _first_env(
-        "OPENAI_MODEL_NAME",
-        "AI_MODEL_NAME",
-        default="gpt-4o-mini",
-    ) or "gpt-4o-mini"
+    EMBEDDING_MODEL: str = (
+        _first_env(
+            "OPENAI_EMBEDDING_MODEL",
+            "EMBEDDING_MODEL_NAME",
+            default="text-embedding-ada-002",
+        )
+        or "text-embedding-ada-002"
+    )
+    EMBEDDING_DEPLOYMENT: str = (
+        _first_env(
+            "OPENAI_EMBEDDING_DEPLOYMENT",
+            "EMBEDDING_MODEL_DEPLOYMENT_NAME",
+            "OPENAI_EMBEDDING_MODEL",
+            default="text-embedding-ada-002",
+        )
+        or "text-embedding-ada-002"
+    )
+    CHAT_MODEL: str = (
+        _first_env(
+            "AI_MODEL_DEPLOYMENT_NAME",
+            "AOAI_DEPLOYMENT_NAME",
+            default="gpt-4o-mini",
+        )
+        or "gpt-4o-mini"
+    )
+    MODEL_NAME: str = (
+        _first_env(
+            "OPENAI_MODEL_NAME",
+            "AI_MODEL_NAME",
+            default="gpt-4o-mini",
+        )
+        or "gpt-4o-mini"
+    )
 
 
 class AgenticRagSettings:
@@ -138,22 +159,34 @@ class AgenticRagSettings:
     ENABLED: bool = (
         _first_env("AGENTIC_RAG_ENABLED", default="false") or "false"
     ).lower() == "true"
-    KNOWLEDGE_SOURCE_NAME: str = _first_env(
-        "KNOWLEDGE_SOURCE_NAME",
-        default="docsimplify-knowledge-source",
-    ) or "docsimplify-knowledge-source"
-    KNOWLEDGE_SOURCE_DESCRIPTION: str = _first_env(
-        "KNOWLEDGE_SOURCE_DESCRIPTION",
-        default="Knowledge source built from uploaded DocSimplify documents",
-    ) or "Knowledge source built from uploaded DocSimplify documents"
-    KNOWLEDGE_BASE_NAME: str = _first_env(
-        "KNOWLEDGE_BASE_NAME",
-        default="docsimplify-knowledge-base",
-    ) or "docsimplify-knowledge-base"
-    KNOWLEDGE_BASE_DESCRIPTION: str = _first_env(
-        "KNOWLEDGE_BASE_DESCRIPTION",
-        default="Agentic retrieval knowledge base for DocSimplify",
-    ) or "Agentic retrieval knowledge base for DocSimplify"
+    KNOWLEDGE_SOURCE_NAME: str = (
+        _first_env(
+            "KNOWLEDGE_SOURCE_NAME",
+            default="docsimplify-knowledge-source",
+        )
+        or "docsimplify-knowledge-source"
+    )
+    KNOWLEDGE_SOURCE_DESCRIPTION: str = (
+        _first_env(
+            "KNOWLEDGE_SOURCE_DESCRIPTION",
+            default="Knowledge source built from uploaded DocSimplify documents",
+        )
+        or "Knowledge source built from uploaded DocSimplify documents"
+    )
+    KNOWLEDGE_BASE_NAME: str = (
+        _first_env(
+            "KNOWLEDGE_BASE_NAME",
+            default="docsimplify-knowledge-base",
+        )
+        or "docsimplify-knowledge-base"
+    )
+    KNOWLEDGE_BASE_DESCRIPTION: str = (
+        _first_env(
+            "KNOWLEDGE_BASE_DESCRIPTION",
+            default="Agentic retrieval knowledge base for DocSimplify",
+        )
+        or "Agentic retrieval knowledge base for DocSimplify"
+    )
     ANSWER_INSTRUCTIONS: str = _first_env(
         "KNOWLEDGE_BASE_ANSWER_INSTRUCTIONS",
         default=(
@@ -222,7 +255,7 @@ class MCPConnectionSettings:
 class LayoutRagSettings:
     """Settings for the versioned layout-based RAG ingestion pipeline."""
 
-    ENABLED: bool = (os.getenv("LAYOUT_RAG_ENABLED", "false").lower() == "true")
+    ENABLED: bool = os.getenv("LAYOUT_RAG_ENABLED", "false").lower() == "true"
     INDEX_NAME: str = os.getenv("LAYOUT_RAG_INDEX_NAME", "documents-layout-rag-v2")
     DATASOURCE_NAME: str = os.getenv(
         "LAYOUT_RAG_DATASOURCE_NAME",
