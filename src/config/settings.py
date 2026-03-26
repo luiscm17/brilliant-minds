@@ -26,7 +26,7 @@ class AgentSettings:
     """
 
     _AZURE_AI_PROJECT_ENDPOINT: Optional[str] = os.getenv("AZURE_AI_PROJECT_ENDPOINT")
-    _AZURE_AI_MODEL_DEPLOYMENT_NAME: Optional[str] = os.getenv("AZURE_AI_MODEL_DEPLOYMENT_NAME")
+    _AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME: Optional[str] = os.getenv("AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME")
 
     @classmethod
     def get_project_endpoint(cls) -> str:
@@ -38,7 +38,7 @@ class AgentSettings:
 
     @classmethod
     def get_model_deployment_name(cls) -> str:
-        model = cls._AZURE_AI_MODEL_DEPLOYMENT_NAME
+        model = cls._AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME
         if not model:
             raise ValueError("AZURE_AI_MODEL_DEPLOYMENT_NAME is not configured")
         assert isinstance(model, str)
