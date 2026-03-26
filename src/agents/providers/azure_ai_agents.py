@@ -3,11 +3,11 @@
 from typing import Any
 from agent_framework.azure import AzureAIAgentsProvider
 from azure.identity.aio import AzureCliCredential
-from src.agents.providers.base import BaseAgentProvider
+from src.agents.providers.base_agent import BaseAgent
 from src.config.settings import AgentSettings
 
 
-class AIAgentsProvider(BaseAgentProvider):
+class AIAgentsProvider(BaseAgent):
     def __init__(self):
         self._credential = AzureCliCredential()
         self._provider = AzureAIAgentsProvider(

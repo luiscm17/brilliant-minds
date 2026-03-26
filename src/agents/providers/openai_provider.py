@@ -2,12 +2,12 @@
 from typing import Any
 # from agent_framework.azure import AzureOpenAIResponsesClient
 from agent_framework.openai import OpenAIChatClient
-from src.agents.providers.base import BaseAgentProvider
+from src.agents.providers.base_agent import BaseAgent
 from src.config.settings import AzureOpenAISettings
 from azure.identity import AzureCliCredential
 
 
-class OpenAIProvider(BaseAgentProvider):
+class OpenAIProvider(BaseAgent):
     """
     Provider para crear agentes usando Azure OpenAI.
     No requiere async with, funciona como cliente API.

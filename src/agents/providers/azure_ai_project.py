@@ -12,11 +12,11 @@ from typing import Any
 from azure.ai.projects.aio import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.identity.aio import AzureCliCredential
-from src.agents.providers.base import BaseAgentProvider
+from src.agents.providers.base_agent import BaseAgent
 from src.config.settings import AgentSettings
 
 
-class AIProjectProvider(BaseAgentProvider):
+class AIProjectProvider(BaseAgent):
     """
     Provider for creating versioned agents using Azure AI Projects SDK.
 

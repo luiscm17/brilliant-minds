@@ -12,14 +12,14 @@ Future Provisions:
     - AnthropicProvider (planned)
 """
 
-from src.agents.providers.base import BaseAgentProvider
+from src.agents.providers.base_agent import BaseAgent
 from src.agents.providers.azure_ai_project import AIProjectProvider
 from src.agents.providers.azure_ai_agents import AIAgentsProvider
-from src.agents.providers.azure_openai_provider import AzureOpenAIProvider
+from src.agents.providers.azure_responses_provider import AzureResponsesAgent
 
 __all__ = [
-    "BaseAgentProvider",
+    "BaseAgent",
     "AIProjectProvider",
     "AIAgentsProvider",
-    "AzureOpenAIProvider"
+    "AzureResponsesAgent"
 ]
