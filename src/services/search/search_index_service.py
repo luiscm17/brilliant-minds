@@ -1,31 +1,48 @@
-"""Service to configure Azure AI Search management clients."""
+"""Service to configure and provide Azure SearchIndexClient and index name."""
 
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.indexes import SearchIndexClient, SearchIndexerClient
+from azure.identity import DefaultAzureCredential
+from azure.search.documents.indexes import SearchIndexClient
 
-from src.config.settings import AzureSearchSettings
+from src.config.settings import AISearchSettings
 
 
 class SearchIndexService:
-    """Wrapper for the Azure AI Search index management client."""
+    """
+    Wrapper for Azure SearchIndexClient setup and retrieval along with index name.
+    """
 
     def __init__(self) -> None:
-        AzureSearchSettings.validate()
-        credential = AzureKeyCredential(AzureSearchSettings.KEY)
-        self._client = SearchIndexClient(
-            endpoint=AzureSearchSettings.ENDPOINT,
-            credential=credential,
+        """
+        Initialize the SearchIndexService using settings from AISearchSettings.
+
+        Raises:
+            ValueError: If settings are not properly configured.
+        """
+        AISearchSettings.validate()
+        ai_search_endpoint = AISearchSettings.get_endpoint()
+        ai_search_api_key = AISearchSettings.get_api_key()
+        index_name = AISearchSettings.get_index_name()
+
+        self._client_index = SearchIndexClient(
+            endpoint=ai_search_endpoint,
+            credential=DefaultAzureCredential(),
         )
-        self._indexer_client = SearchIndexerClient(
-            endpoint=AzureSearchSettings.ENDPOINT,
-            credential=credential,
-        )
+        self._index_name = index_name
 
     def get_client(self) -> SearchIndexClient:
-        return self._client
+        """
+        Retrieve the configured SearchIndexClient instance.
 
-    def get_indexer_client(self) -> SearchIndexerClient:
-        return self._indexer_client
+        Returns:
+            SearchIndexClient: The Azure Search Index client.
+        """
+        return self._client_index
 
     def get_index_name(self) -> str:
-        return AzureSearchSettings.INDEX
+        """
+        Retrieve the configured search index name.
+
+        Returns:
+            str: The name of the search index.
+        """
+        return self._index_name

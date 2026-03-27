@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "namePrefix": {
-            "value": "docagent"
+            "value": "hackms"
         },
         "location": {
-            "value": "westus"
+            "value": "eastus"
         }
     }
 }

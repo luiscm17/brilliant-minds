@@ -1,9 +1,61 @@
-param namePrefix string = 'docsimplify'
+@description('The prefix for the resource names.')
+param namePrefix string = 'foundry'
+
+@description('The unique suffix for the resource names.')
 param uniqueSuffix string = take(uniqueString(resourceGroup().id), 5)
+
+// Azure Foundry Service
+@description('The name of the AI Foundry.')
+param aiFoundryName string = 'fd-${namePrefix}-${uniqueSuffix}'
+
+@description('The name of the AI Project.')
+param aiProjectName string = 'pj-${namePrefix}-${uniqueSuffix}'
+
+@description('The location of the resources.')
 param location string = 'eastus'
 
-var aiFoundryName = 'fd-${namePrefix}-${uniqueSuffix}'
-var aiProjectName = 'pj-${namePrefix}-${uniqueSuffix}'
+// AI Search Service
+@description('The SKU AI Search service.')
+param skuSearch string = 'standard'
+
+// Generative Model Service
+@description('Model deployment name.')
+param modelDeploymentName string = 'gpt-4.1m-dev'
+
+@description('Model name.')
+param modelName string = 'gpt-4.1-mini'
+
+@description('Model format.')
+param modelFormat string = 'OpenAI'
+
+@description('Model version.')
+param modelVersion string = '2025-04-14'
+
+@description('The name of RAI policy.')
+param raiPolicyName string = 'Microsoft.DefaultV2'
+
+@description('SKU Generative Model capacity.')
+param skuCapacity int = 100
+
+// Embedding Model Service
+@description('Embedding Model Deployment.')
+param embeddingModelDeploymentName string = 'text-embedding-3-large'
+
+@description('Model Name')
+param embeddingModelName string = 'text-embedding-3-large'
+
+@description('Model format to be deployed.')
+param embeddingModelFormat string = 'OpenAI'
+
+@description('Model version to be deployed.')
+param embeddingModelVersion string = '1'
+
+@description('SKU capacity.')
+param skuCapacityEmbedding int = 120
+
+@description('SKU name for the deployment.')
+param skuNameEmbedding string = 'GlobalStandard'
+
 var storageAccountName = 'st${namePrefix}${uniqueSuffix}'
 var cosmosAccountName = 'cosmos-${namePrefix}-${uniqueSuffix}'
 var searchServiceName = 'srch-${namePrefix}-${uniqueSuffix}'
@@ -52,11 +104,44 @@ module gptModel 'modules/generative-model.bicep' = {
   name: 'gptModelDeployment'
   params: {
     resourceName: aiFoundry.name
-    modelDeploymentName: 'gpt-4o-mini'
-    modelName: 'gpt-4o-mini'
-    modelFormat: 'OpenAI'
-    modelVersion: '2024-07-18'
-    skuCapacity: 10
+    modelDeploymentName: modelDeploymentName
+    modelName: modelName
+    modelFormat: modelFormat
+    modelVersion: modelVersion
+    skuCapacity: skuCapacity
+    raiPolicyName: raiPolicyName
+    
+  }
+  dependsOn: [
+    aiProjectModule
+  ]
+}
+
+module embeddingModelModule 'modules/embedding-model.bicep' = {
+  name: 'embeddingModelDeployment'
+  params: {
+    resourceName: aiFoundry.name
+    embeddingModelDeploymentName: embeddingModelDeploymentName
+    embeddingModelName: embeddingModelName
+    embeddingModelFormat: embeddingModelFormat
+    embeddingModelVersion: embeddingModelVersion
+    skuCapacityEmbedding: skuCapacityEmbedding
+    skuNameEmbedding: skuNameEmbedding
+  }
+  dependsOn: [
+    generativeModelModule
+  ]
+}
+
+module aiSearchModule 'modules/ai-search.bicep' = {
+  name: 'aiSearchDeployment'
+  params: {
+    searchServiceName: 'search-${namePrefix}-${uniqueSuffix}'
+    location: location
+    tags: {
+      
+    }
+    sku: skuSearch
   }
 }
 
@@ -105,11 +190,8 @@ module docIntelModule 'modules/document-intelligence.bicep' = {
 // ── Outputs ──────────────────────────────────────────────────────────────────
 output foundryName string = aiFoundry.name
 output foundryEndpoint string = aiFoundry.properties.endpoint
-output aiProjectName string = aiProjectName
-output storageAccountName string = storageAccountModule.outputs.storageAccountName
-output cosmosEndpoint string = cosmosModule.outputs.endpoint
-output cosmosAccountName string = cosmosModule.outputs.accountName
-output searchEndpoint string = searchModule.outputs.endpoint
-output searchServiceName string = searchModule.outputs.serviceName
-output docIntelEndpoint string = docIntelModule.outputs.endpoint
-output docIntelName string = docIntelModule.outputs.accountName
+output foundryIdentityPrincipalId string = aiFoundry.identity.principalId
+output projectId string = aiProjectModule.outputs.projectId
+output modelDeploymentName string = generativeModelModule.outputs.modelDeploymentName
+output embeddingModelDeploymentName string = embeddingModelModule.outputs.embeddingModelName
+output searchServiceId string = aiSearchModule.outputs.searchId

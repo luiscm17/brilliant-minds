@@ -7,21 +7,11 @@ requires-python = ">=3.13"
 dependencies = [
     "agent-framework>=1.0.0rc4",
     "agent-framework-azure-ai>=1.0.0rc4",
-    "python-dotenv>=1.0.0",
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.30.0",
-    "python-multipart>=0.0.9",
-    "python-jose[cryptography]>=3.3.0",
-    "bcrypt>=4.1.0",
-    "azure-cosmos>=4.7.0",
-    "azure-storage-blob>=12.19.0",
     "azure-search-documents>=11.7.0b2",
-    "azure-ai-documentintelligence>=1.0.0",
-    "azure-identity>=1.17.0",
-    "azure-ai-projects>=1.0.0b1",
-    "openai>=1.40.0",
-    "pydantic>=2.7.0",
-    "pydantic-settings>=2.3.0",
+    "azure-storage-blob>=12.29.0b1",
+    "dotenv>=0.9.9",
+    "pytest>=9.0.2",
+    "redis>=7.3.0",
 ]
 
 [tool.hatch.package]

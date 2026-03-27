@@ -2,7 +2,7 @@
 param aiProjectName string
 
 @description('Location for the project.')
-param location string
+param location string = resourceGroup().location
 
 @description('Parent AI Foundry account name.')
 param resourceName string

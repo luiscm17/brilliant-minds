@@ -13,7 +13,7 @@ def _client() -> BlobServiceClient:
 async def ensure_container():
     """Ensure the blob container exists."""
     async with _client() as client:
-        container = client.get_container_client(BlobStorageSettings.CONTAINER)
+        container = client.get_container_client(BlobStorageSettings.AZURE_STORAGE_CONTAINER)
         try:
             await container.create_container()
         except Exception:
@@ -26,16 +26,16 @@ async def upload_document(file_bytes: bytes, filename: str, user_id: str) -> str
     await ensure_container()
     blob_name = f"{user_id}/{filename}"
     async with _client() as client:
-        container = client.get_container_client(BlobStorageSettings.CONTAINER)
+        container = client.get_container_client(BlobStorageSettings.AZURE_STORAGE_CONTAINER)
         await container.upload_blob(blob_name, file_bytes, overwrite=True)
-        return f"{client.url}/{BlobStorageSettings.CONTAINER}/{blob_name}"
+        return f"{client.url}/{BlobStorageSettings.AZURE_STORAGE_CONTAINER}/{blob_name}"
 
 
 async def download_document(blob_name: str) -> bytes:
     """Download a document from Blob Storage."""
     await ensure_container()
     async with _client() as client:
-        blob = client.get_blob_client(BlobStorageSettings.CONTAINER, blob_name)
+        blob = client.get_blob_client(BlobStorageSettings.AZURE_STORAGE_CONTAINER, blob_name)
         stream = await blob.download_blob()
         return await stream.readall()
 
@@ -44,7 +44,7 @@ async def delete_document(blob_name: str) -> None:
     """Delete a document from Blob Storage."""
     await ensure_container()
     async with _client() as client:
-        blob = client.get_blob_client(BlobStorageSettings.CONTAINER, blob_name)
+        blob = client.get_blob_client(BlobStorageSettings.AZURE_STORAGE_CONTAINER, blob_name)
         await blob.delete_blob()
 
 
@@ -54,7 +54,7 @@ async def list_documents(user_id: str) -> list[dict]:
     prefix = f"{user_id}/"
     documents = []
     async with _client() as client:
-        container = client.get_container_client(BlobStorageSettings.CONTAINER)
+        container = client.get_container_client(BlobStorageSettings.AZURE_STORAGE_CONTAINER)
         async for blob in container.list_blobs(name_starts_with=prefix):
             documents.append({
                 "name": blob.name,

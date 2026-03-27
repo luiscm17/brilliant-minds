@@ -10,7 +10,7 @@ param storageAccountName string
 
 
 @description('The Storage Account Location.')
-param location string
+param location string = resourceGroup().location
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   name: storageAccountName

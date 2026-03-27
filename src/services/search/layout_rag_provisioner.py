@@ -55,7 +55,7 @@ class LayoutRagProvisioner:
             name=LayoutRagSettings.DATASOURCE_NAME,
             type="azureblob",
             connection_string=BlobStorageSettings.CONNECTION_STRING or "",
-            container=SearchIndexerDataContainer(name=BlobStorageSettings.CONTAINER or ""),
+            container=SearchIndexerDataContainer(name=BlobStorageSettings.AZURE_STORAGE_CONTAINER or ""),
         )
 
     def _build_index(self) -> SearchIndex:
