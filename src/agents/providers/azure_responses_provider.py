@@ -9,7 +9,7 @@ from .base_agent import BaseAgent
 
 
 class AzureResponsesAgent(BaseAgent):
-    """Agente que usa AzureOpenAIResponsesClient (compatible con Foundry)."""
+    """Bridge between BaseAgent and AzureOpenAIResponsesClient-backed agents."""
 
     def __init__(
         self,
@@ -23,7 +23,9 @@ class AzureResponsesAgent(BaseAgent):
         super().__init__(name, instructions, tools)
 
         self.project_endpoint = AgentSettings.get_project_endpoint()
-        self.deployment_name = deployment_name or os.getenv("AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME")
+        self.deployment_name = deployment_name or os.getenv(
+            "AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME"
+        )
 
         if not self.project_endpoint or not self.deployment_name:
             raise ValueError(
@@ -31,6 +33,7 @@ class AzureResponsesAgent(BaseAgent):
             )
 
     async def _create_client(self) -> AzureOpenAIResponsesClient:
+        """Create the AzureOpenAIResponsesClient with configured credentials."""
         credential = DefaultAzureCredential()
 
         return AzureOpenAIResponsesClient(

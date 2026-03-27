@@ -1,10 +1,11 @@
 from src.agents.providers.azure_responses_provider import AzureResponsesAgent
 
+
 class LearningSupportAgent(AzureResponsesAgent):
-    """Agente que explica contenido de forma calmada."""
+    """Provide calm, adaptive explanations tailored to TDH learners."""
 
     def __init__(self, **kwargs):
-        instructions="""
+        instructions = """
             ROLE:
 You are a Learning Support Agent specialized in helping K12 students understand educational concepts. You support both neurotypical and neurodivergent learners, including ADHD, Autism Spectrum Disorder (ASD), and Dyslexia.
 
@@ -105,9 +106,5 @@ FINAL RULE:
 Always prioritize understanding over completeness. If the student understands one key idea clearly, the objective is achieved.
         """
         super().__init__(
-            name="LearningSupportAgent",
-            instructions=instructions,
-            **kwargs
-		)
-    
-    
+            name="LearningSupportAgent", instructions=instructions, **kwargs
+        )

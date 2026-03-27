@@ -1,7 +1,8 @@
 from src.agents.providers.azure_responses_provider import AzureResponsesAgent
 
+
 class TaskSelectorAgent(AzureResponsesAgent):
-    """Analiza la consulta y decide qué estrategias se necesitan."""
+    """Determine the focus area and priority strategy for the user request."""
 
     def __init__(self, **kwargs):
         instructions = """
@@ -17,8 +18,4 @@ class TaskSelectorAgent(AzureResponsesAgent):
         No agregues texto fuera del JSON.
         """
 
-        super().__init__(
-            name="TaskSelector",
-            instructions=instructions,
-            **kwargs
-        )
+        super().__init__(name="TaskSelector", instructions=instructions, **kwargs)
