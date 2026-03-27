@@ -6,6 +6,7 @@ from src.config.settings import BlobStorageSettings
 
 
 def _client() -> BlobServiceClient:
+    """Create and return an authenticated BlobServiceClient."""
     BlobStorageSettings.validate()
     return BlobServiceClient.from_connection_string(BlobStorageSettings.CONNECTION_STRING)
 
