@@ -1,73 +1,43 @@
-"""Service for creating and ingesting Azure Blob Knowledge Sources."""
+"""Service for creating and ingesting Azure Blob knowledge sources."""
 
 from azure.search.documents.indexes.models import (
     AzureBlobKnowledgeSource,
     AzureBlobKnowledgeSourceParameters,
-    KnowledgeSourceIngestionParameters,
-    KnowledgeSourceContentExtractionMode,
-    KnowledgeBaseAzureOpenAIModel,
     AzureOpenAIVectorizerParameters,
+    KnowledgeBaseAzureOpenAIModel,
     KnowledgeSourceAzureOpenAIVectorizer,
+    KnowledgeSourceContentExtractionMode,
+    KnowledgeSourceIngestionParameters,
 )
 
-from src.config.settings import (
-    AgentSettings,
-    BlobStorageSettings,
-    AISearchSettings,
-    AzureOpenAISettings,
-)
+from src.config.settings import KnowledgeSourceSettings, BlobStorageSettings, OpenAISettings
 from src.services.search.search_index_service import SearchIndexService
 
 
 class KnowledgeSourceService:
-    """
-    Service to build and ingest AzureBlobKnowledgeSource instances.
-    """
+    """Creates and updates Azure AI Search knowledge sources backed by Blob Storage."""
 
     def __init__(self) -> None:
-        """
-        Validate settings and prepare the SearchIndexService.
-
-        Raises:
-            ValueError: If any required setting is missing or invalid.
-        """
         BlobStorageSettings.validate()
-        AISearchSettings.validate()
         self._index_service = SearchIndexService()
 
-        # Azure OpenAI endpoint and key for embedding and chat models
-        self._aoai_endpoint = AzureOpenAISettings.get_endpoint()
-        self._aoai_key = AzureOpenAISettings.get_api_key()
-        self._embedding_name = AzureOpenAISettings.get_embedding_model_name()
-        self._embedding_deployment_name = AzureOpenAISettings.get_embedding_deployment_name()
-
     def create_knowledge_source(
-        self, container_name: str, description: str
+        self,
+        name: str | None = None,
+        description: str | None = None, 
     ) -> AzureBlobKnowledgeSource:
-        """
-        Construct an AzureBlobKnowledgeSource with minimal extraction and default models.
-
-        Args:
-            name: Unique name for the knowledge source.
-            description: Human-readable description.
-
-        Returns:
-            Configured AzureBlobKnowledgeSource instance.
-        """
-        # Build vectorizer parameters for embeddings
+        """Create an Azure Blob knowledge source with OpenAI embedding and chat models."""
         embedding_params = AzureOpenAIVectorizerParameters(
-            resource_url=self._aoai_endpoint,
-            deployment_name=AzureOpenAISettings.get_embedding_deployment_name(),
-            model_name=AzureOpenAISettings.get_embedding_model_name(),
-            api_key=self._aoai_key,
+            resource_url=OpenAISettings.ENDPOINT,
+            deployment_name=OpenAISettings.EMBEDDING_DEPLOYMENT,
+            model_name=OpenAISettings.EMBEDDING_MODEL,
+            api_key=OpenAISettings.API_KEY,
         )
-
-        # Build vectorizer parameters for chat completions
         chat_params = AzureOpenAIVectorizerParameters(
-            resource_url=self._aoai_endpoint,
-            deployment_name=AzureOpenAISettings.get_deployment_name(),
-            model_name=AzureOpenAISettings.get_model_name(),
-            api_key=self._aoai_key,
+            resource_url=OpenAISettings.ENDPOINT,
+            deployment_name=OpenAISettings.CHAT_MODEL,
+            model_name=OpenAISettings.MODEL_NAME,
+            api_key=OpenAISettings.API_KEY,
         )
 
         ingestion_params = KnowledgeSourceIngestionParameters(
@@ -85,24 +55,19 @@ class KnowledgeSourceService:
         )
 
         blob_params = AzureBlobKnowledgeSourceParameters(
-            connection_string=BlobStorageSettings.CONNECTION_STRING,  # type: ignore
-            container_name=BlobStorageSettings.AZURE_STORAGE_CONTAINER,  # type: ignore
+            connection_string=BlobStorageSettings.CONNECTION_STRING,
+            container_name=BlobStorageSettings.AZURE_STORAGE_CONTAINER,
             is_adls_gen2=False,
             ingestion_parameters=ingestion_params,
         )
 
         return AzureBlobKnowledgeSource(
-            name=container_name,
-            description=description,
+            name=name or KnowledgeSourceSettings.get_name(),
+            description=description or KnowledgeSourceSettings.get_description(),
             azure_blob_parameters=blob_params,
         )
 
-    def ingest(self, ks: AzureBlobKnowledgeSource) -> None:
-        """
-        Ingest the given knowledge source into the Azure Search index.
-
-        Args:
-            ks: The AzureBlobKnowledgeSource to create or update.
-        """
+    def create_or_update(self, knowledge_source: AzureBlobKnowledgeSource) -> None:
+        """Create or update the specified knowledge source in Azure AI Search."""
         client = self._index_service.get_client()
-        client.create_or_update_knowledge_source(ks)
+        client.create_or_update_knowledge_source(knowledge_source)
