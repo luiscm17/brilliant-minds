@@ -1,8 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 import type { UserProfile } from "../lib/types";
-import { createProfileFromDraft, readExperienceDraft } from "../lib/profile";
+import {
+  createProfileFromDraft,
+  getPaletteThemeClass,
+  inferPaletteFromProfile,
+  readExperienceDraft,
+  subscribeExperienceDraft,
+} from "../lib/profile";
 
 export default function AccessibilityWrapper({
   children,
@@ -10,8 +17,15 @@ export default function AccessibilityWrapper({
   children: React.ReactNode;
 }) {
   const { profile } = useUser();
+  const [draft, setDraft] = useState(() => readExperienceDraft());
 
-  const sourceProfile = profile ?? createProfileFromDraft(readExperienceDraft());
+  useEffect(() => {
+    return subscribeExperienceDraft(() => {
+      setDraft(readExperienceDraft());
+    });
+  }, []);
+
+  const sourceProfile = profile ?? createProfileFromDraft(draft);
 
   const safeProfile: UserProfile = {
     hasAdhd: sourceProfile.hasAdhd ?? false,
@@ -25,14 +39,9 @@ export default function AccessibilityWrapper({
       : [],
   };
 
-  const themeClass =
-    safeProfile.preset === "combined"
-      ? "theme-combined"
-      : safeProfile.hasDyslexia
-        ? "theme-dyslexia"
-        : safeProfile.hasAdhd
-          ? "theme-adhd"
-          : "theme-default";
+  const themeClass = getPaletteThemeClass(
+    draft.palettePreference ?? inferPaletteFromProfile(safeProfile),
+  );
 
   const toneClass =
     safeProfile.tone === "calm_supportive" ? "tone-calm" : "tone-neutral";

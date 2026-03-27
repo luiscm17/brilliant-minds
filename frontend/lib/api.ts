@@ -180,7 +180,11 @@ export async function getCurrentUser(): Promise<UserProfileDto | null> {
     return readStorage<UserProfileDto | null>(STORAGE_KEYS.mockProfile, null);
   }
 
-  return requestJson<UserProfileDto>("/users/me", { method: "GET" });
+  try {
+    return await requestJson<UserProfileDto>("/users/me", { method: "GET" });
+  } catch {
+    return readStorage<UserProfileDto | null>(STORAGE_KEYS.profile, null);
+  }
 }
 
 export async function updateCurrentUser(
@@ -193,10 +197,15 @@ export async function updateCurrentUser(
     return profile;
   }
 
-  return requestJson<UserProfileDto>("/users/me", {
-    method: "PATCH",
-    body: profile,
-  });
+  try {
+    return await requestJson<UserProfileDto>("/users/me", {
+      method: "PATCH",
+      body: profile,
+    });
+  } catch {
+    writeStorage(STORAGE_KEYS.profile, profile);
+    return profile;
+  }
 }
 
 export async function listDocuments(): Promise<DocumentItem[]> {
@@ -252,7 +261,10 @@ export async function uploadDocument(
   return (await response.json()) as DocumentUploadResult;
 }
 
-export async function deleteDocument(documentId: string): Promise<void> {
+export async function deleteDocument(
+  documentId: string,
+  blobName?: string,
+): Promise<void> {
   if (USE_MOCK_API) {
     await wait(220);
 
@@ -268,9 +280,12 @@ export async function deleteDocument(documentId: string): Promise<void> {
     return;
   }
 
-  await requestJson<{ status: string }>(`/documents/${documentId}`, {
+  await requestJson<{ status: string }>(
+    `/documents/${encodeURIComponent(blobName ?? documentId)}`,
+    {
     method: "DELETE",
-  });
+    },
+  );
 }
 
 export async function createChat(title?: string): Promise<CreateChatResponse> {

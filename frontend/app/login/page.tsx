@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import BrandMark from "../../components/BrandMark";
 import { getCurrentUser, login, register } from "../../lib/api";
 import { useUser } from "../../context/UserContext";
 
@@ -22,8 +23,8 @@ function LoginPageContent() {
   const headline = useMemo(
     () =>
       mode === "login"
-        ? "entra a tu espacio calmado"
-        : "crea una cuenta para adaptar la lectura",
+        ? "vuelve a tu espacio de lectura clara"
+        : "crea una cuenta y personaliza el ambiente visual",
     [mode],
   );
 
@@ -69,26 +70,39 @@ function LoginPageContent() {
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: "easeOut" }}
-      className="studio-panel w-full p-6 md:p-8"
+      className="studio-panel hero-grid w-full p-6 md:p-8"
     >
-      <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
-        <div className="rounded-[28px] bg-[rgba(255,255,255,0.62)] p-6 md:p-8">
-          <span className="eyebrow">Auth gateway</span>
-          <h1 className="display-title mt-5 text-5xl md:text-6xl">
-            {headline}
-          </h1>
-          <p className="muted-copy mt-5 max-w-xl text-base leading-8">
-            Entra para guardar tu perfil, cargar material y ver respuestas mas
-            claras desde una experiencia continua.
+      <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="dark-studio-panel rounded-[30px] p-6 text-white md:p-8">
+          <BrandMark showTagline />
+
+          <span className="eyebrow mt-6">Acceso</span>
+          <h1 className="display-title mt-5 text-5xl md:text-6xl">{headline}</h1>
+          <p className="mt-5 max-w-xl text-base leading-8 text-white/78">
+            La experiencia adapta paletas, tono y estructura visual desde
+            preferencias de lectura. La seleccion se hace por comodidad, no por
+            etiquetas visibles.
           </p>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            <span className="status-pill border-white/10 bg-white/10 text-white">
+              Paletas por preferencia
+            </span>
+            <span className="status-pill border-white/10 bg-white/10 text-white">
+              UI inspirada en la presentacion
+            </span>
+            <span className="status-pill border-white/10 bg-white/10 text-white">
+              RAG listo para demo
+            </span>
+          </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <button
               onClick={() => setMode("login")}
               className={
                 mode === "login"
-                  ? "primary-button"
-                  : "secondary-button"
+                  ? "primary-button shadow-[0_18px_30px_rgba(35,209,233,0.22)]"
+                  : "secondary-button border-white/10 bg-white/10 text-white"
               }
             >
               Ya tengo cuenta
@@ -97,8 +111,8 @@ function LoginPageContent() {
               onClick={() => setMode("register")}
               className={
                 mode === "register"
-                  ? "primary-button"
-                  : "secondary-button"
+                  ? "primary-button shadow-[0_18px_30px_rgba(35,209,233,0.22)]"
+                  : "secondary-button border-white/10 bg-white/10 text-white"
               }
             >
               Crear cuenta
@@ -106,38 +120,45 @@ function LoginPageContent() {
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <div className="tone-card">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                1
+            <div className="rounded-[24px] border border-white/10 bg-white/8 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/54">
+                Paso 1
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+              <p className="mt-2 text-sm leading-6 text-white/82">
                 Entras o creas cuenta.
               </p>
             </div>
-            <div className="tone-card">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                2
+            <div className="rounded-[24px] border border-white/10 bg-white/8 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/54">
+                Paso 2
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                Ajustas tu lectura.
+              <p className="mt-2 text-sm leading-6 text-white/82">
+                Eliges una paleta visual.
               </p>
             </div>
-            <div className="tone-card">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                3
+            <div className="rounded-[24px] border border-white/10 bg-white/8 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/54">
+                Paso 3
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                Subes y simplificas.
+              <p className="mt-2 text-sm leading-6 text-white/82">
+                Subes, entiendes y conversas.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[28px] bg-[linear-gradient(180deg,rgba(255,250,242,0.94),rgba(251,244,233,0.84))] p-6 md:p-8">
+        <div className="rounded-[30px] border border-white/10 bg-[rgba(10,18,27,0.72)] p-6 md:p-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <span className="eyebrow">Cuenta</span>
+            <span className="status-pill">
+              {mode === "login" ? "Sesion existente" : "Registro nuevo"}
+            </span>
+          </div>
+
           <div className="space-y-4">
             {mode === "register" ? (
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                <label className="mb-2 block text-sm font-semibold text-white/82">
                   Nombre
                 </label>
                 <input
@@ -150,7 +171,7 @@ function LoginPageContent() {
             ) : null}
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">
+              <label className="mb-2 block text-sm font-semibold text-white/82">
                 Email
               </label>
               <input
@@ -163,7 +184,7 @@ function LoginPageContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">
+              <label className="mb-2 block text-sm font-semibold text-white/82">
                 Contrasena
               </label>
               <input
@@ -176,14 +197,14 @@ function LoginPageContent() {
             </div>
           </div>
 
-          <p className="mt-5 text-sm leading-6 text-slate-500">
+          <p className="mt-5 text-sm leading-6 text-white/64">
             {mode === "login"
-              ? "Entras directo a tu panel si tu perfil ya esta listo."
-              : "Despues del registro podras ajustar la experiencia antes de usar el chat."}
+              ? "Si tu perfil ya existe, entraras directo al panel principal."
+              : "Despues del registro elegiras el ambiente visual que te resulte mas comodo."}
           </p>
 
           {error ? (
-            <div className="mt-4 rounded-2xl bg-[rgba(222,123,89,0.14)] p-4 text-sm text-[#96472f]">
+            <div className="mt-4 rounded-2xl border border-[rgba(255,125,108,0.22)] bg-[rgba(255,125,108,0.12)] p-4 text-sm text-[#ffd2cb]">
               {error}
             </div>
           ) : null}
@@ -205,6 +226,17 @@ function LoginPageContent() {
                   ? "Entrar"
                   : "Crear cuenta"}
             </button>
+          </div>
+
+          <div className="mt-6 rounded-[22px] border border-white/10 bg-white/5 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
+              Nota de experiencia
+            </p>
+            <p className="mt-2 text-sm leading-6 text-white/68">
+              La interfaz usa paletas descriptivas como "Arena + cielo" o
+              "Marfil + azul" para mantener una seleccion mas privada y
+              responsable.
+            </p>
           </div>
         </div>
       </div>
