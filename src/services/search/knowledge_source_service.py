@@ -85,7 +85,7 @@ class KnowledgeSourceService:
         )
 
         blob_params = AzureBlobKnowledgeSourceParameters(
-            connection_string=BlobStorageSettings.AZURE_STORAGE_CONNECTION_STRING,  # type: ignore
+            connection_string=BlobStorageSettings.CONNECTION_STRING,  # type: ignore
             container_name=BlobStorageSettings.AZURE_STORAGE_CONTAINER,  # type: ignore
             is_adls_gen2=False,
             ingestion_parameters=ingestion_params,

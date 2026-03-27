@@ -419,3 +419,6 @@ npm-shrinkwrap.json
 # Wind-specific files
 .windsurf/
 !.windsurf/skills/
+
+# 
+.claude/

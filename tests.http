@@ -1,0 +1,116 @@
+@host = http://localhost:8001/api/v1
+@contentType = application/json
+@token = {{login.response.body.token}}
+@userId = {{login.response.body.userId}}
+
+### 1. Auth: Register
+# @name register
+POST {{host}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "email": "user@example.com",
+    "password": "password123",
+    "name": "Test User"
+}
+
+
+### 1.1 Auth: Register (duplicate email)
+POST {{host}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "email": "user@example.com",
+    "password": "password123",
+    "name": "Test User"
+}
+
+
+### 2.1 Auth: Login (invalid password)
+POST {{host}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "user@example.com",
+    "password": "wrong-password"
+}
+
+
+### 2.2 Auth: Login (valid)
+# @name login
+POST {{host}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "user@example.com",
+    "password": "password123"
+}
+
+### 3. Documents: Upload (PDF)
+POST {{host}}/documents
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="pdf-examen-wellsharp-con-respuestas-2_compress.pdf"
+Content-Type: application/pdf
+
+@resource/pdf-examen-wellsharp-con-respuestas-2_compress.pdf
+--boundary--
+
+### 3.1 Documents: Upload (missing token)
+POST {{host}}/documents
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="pdf-well-control-examen_compress.pdf"
+Content-Type: application/pdf
+
+@resource/pdf-well-control-examen_compress.pdf
+--boundary--
+
+
+### 3.2 Documents: Upload (unsupported mime)
+POST {{host}}/documents
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="malware.exe"
+Content-Type: application/octet-stream
+
+Binary data ignored.
+--boundary--
+
+
+### 4. Documents: List
+# @name listDocuments
+# IMPORTANT: Run this before 'Download' or 'Delete' to populate variables
+GET {{host}}/documents
+Authorization: Bearer {{token}}
+
+
+### 4.1 Capture blobName
+@blobName = {{listDocuments.response.body.0.blobName}}
+
+### 5. Documents: Download
+# NOTE: Ejecutar esta petición sólo después de "4. Documents: List" para que el índice 0 exista
+GET {{host}}/documents/{{blobName}}
+Authorization: Bearer {{token}}
+
+### 6. Documents: Delete
+DELETE {{host}}/documents/{{blobName}}
+Authorization: Bearer {{token}}
+
+### 7. Chats: Send Message
+POST {{host}}/chats
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+    "message": "Hola, ¿puedes simplificar este documento?",
+    "fatigueLevel": 1
+}
+
+### 8. Health Check
+GET http://localhost:8001/health

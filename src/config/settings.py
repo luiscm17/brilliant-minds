@@ -1,11 +1,8 @@
-"""Application settings loaded from environment variables.
-
-Uses dotenv to load configuration from .env files for local development
-and environment variables in production deployments.
-"""
+"""Application settings loaded from environment variables."""
 
 import os
-from typing import Optional
+from pathlib import Path
+from typing import Optional, List
 
 from dotenv import load_dotenv
 
@@ -13,17 +10,24 @@ load_dotenv()
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
+CORS_ORIGINS: List[str] = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+
+def _first_env(*names: str, default: Optional[str] = None) -> Optional[str]:
+    """Return the first non-empty environment variable from a list of aliases."""
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return default
+
 
 class AgentSettings:
-    """Settings for Azure AI Project agents.
-
-    Manages configuration for Azure AI Foundry endpoints and model
-    deployments. Values are loaded from environment variables.
-
-    Environment variables:
-        AI_PROJECT_ENDPOINT: Azure AI Project endpoint URL.
-        AI_MODEL_DEPLOYMENT_NAME: Name of the deployed model.
-    """
+    """Settings for Azure AI Project agents."""
 
     _AZURE_AI_PROJECT_ENDPOINT: Optional[str] = os.getenv("AZURE_AI_PROJECT_ENDPOINT")
     _AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME: Optional[str] = os.getenv("AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME")
@@ -45,25 +49,37 @@ class AgentSettings:
         return model
 
 
+class AuthSettings:
+    """Settings for JWT authentication."""
+
+    SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+    ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
+
+
+class AuthStorageSettings:
+    """Settings for simple user storage used during authentication."""
+
+    DB_PATH: str = os.getenv("AUTH_DB_PATH", "data/users.db")
+
+    @classmethod
+    def get_db_path(cls) -> Path:
+        path = Path(cls.DB_PATH)
+        return path if path.is_absolute() else Path.cwd() / path
+
+
 class BlobStorageSettings:
-    """Settings for Azure Blob Storage.
+    """Settings for Azure Blob Storage."""
 
-    Manages connection strings and container names for document
-    storage operations.
-
-    Environment variables:
-        AZURE_STORAGE_CONNECTION_STRING: Storage account connection string.
-        AZURE_STORAGE_CONTAINER: Name of the blob container.
-    """
-
-    AZURE_STORAGE_CONNECTION_STRING: Optional[str] = os.getenv(
-        "AZURE_STORAGE_CONNECTION_STRING"
+    CONNECTION_STRING: Optional[str] = _first_env("AZURE_STORAGE_CONNECTION_STRING")
+    AZURE_STORAGE_CONTAINER: Optional[str] = _first_env(
+        "AZURE_STORAGE_CONTAINER",
+        default="documents",
     )
-    AZURE_STORAGE_CONTAINER: Optional[str] = os.getenv("AZURE_STORAGE_CONTAINER")
 
     @classmethod
     def validate(cls) -> None:
-        if not cls.AZURE_STORAGE_CONNECTION_STRING:
+        if not cls.CONNECTION_STRING:
             raise ValueError("AZURE_STORAGE_CONNECTION_STRING is not configured")
         if not cls.AZURE_STORAGE_CONTAINER:
             raise ValueError("AZURE_STORAGE_CONTAINER is not configured")
@@ -294,3 +310,79 @@ class RedisSettings:
     @classmethod
     def get_redis_url(cls) -> str:
         return cls.REDIS_URL
+    
+class LayoutRagSettings:
+    """Settings for the versioned layout-based RAG ingestion pipeline."""
+
+    ENABLED: bool = os.getenv("LAYOUT_RAG_ENABLED", "false").lower() == "true"
+    INDEX_NAME: str = os.getenv("LAYOUT_RAG_INDEX_NAME", "documents-layout-rag-v2")
+    DATASOURCE_NAME: str = os.getenv(
+        "LAYOUT_RAG_DATASOURCE_NAME",
+        "documents-layout-rag-v2-datasource",
+    )
+    SKILLSET_NAME: str = os.getenv(
+        "LAYOUT_RAG_SKILLSET_NAME",
+        "documents-layout-rag-v2-skillset",
+    )
+    INDEXER_NAME: str = os.getenv(
+        "LAYOUT_RAG_INDEXER_NAME",
+        "documents-layout-rag-v2-indexer",
+    )
+    MAX_CHUNK_LENGTH: int = int(os.getenv("LAYOUT_RAG_MAX_CHUNK_LENGTH", "2000"))
+    OVERLAP_LENGTH: int = int(os.getenv("LAYOUT_RAG_OVERLAP_LENGTH", "200"))
+    ENABLE_IMAGE_REFERENCES: bool = (
+        os.getenv("LAYOUT_RAG_ENABLE_IMAGE_REFERENCES", "true").lower() == "true"
+    )
+    CONTENT_FIELD: str = os.getenv("LAYOUT_RAG_CONTENT_FIELD", "content")
+    VECTOR_FIELD: str = os.getenv("LAYOUT_RAG_VECTOR_FIELD", "content_vector")
+    TITLE_FIELD: str = os.getenv("LAYOUT_RAG_TITLE_FIELD", "document_title")
+    PATH_FIELD: str = os.getenv("LAYOUT_RAG_PATH_FIELD", "metadata_storage_path")
+    PAGE_FIELD: str = os.getenv("LAYOUT_RAG_PAGE_FIELD", "page_number")
+
+    @classmethod
+    def embedding_dimensions(cls) -> int:
+        model_name = (OpenAISettings.EMBEDDING_MODEL or "").lower()
+        if "3-large" in model_name:
+            return 3072
+        if "3-small" in model_name:
+            return 1536
+        return 1536
+    
+class OpenAISettings:
+    """Settings for Azure OpenAI (embeddings + completions)."""
+
+    ENDPOINT: Optional[str] = _first_env("OPENAI_ENDPOINT", "AOAI_ENDPOINT")
+    API_KEY: Optional[str] = _first_env("OPENAI_API_KEY", "AOAI_KEY")
+    EMBEDDING_MODEL: str = (
+        _first_env(
+            "OPENAI_EMBEDDING_MODEL",
+            "EMBEDDING_MODEL_NAME",
+            default="text-embedding-ada-002",
+        )
+        or "text-embedding-ada-002"
+    )
+    EMBEDDING_DEPLOYMENT: str = (
+        _first_env(
+            "OPENAI_EMBEDDING_DEPLOYMENT",
+            "EMBEDDING_MODEL_DEPLOYMENT_NAME",
+            "OPENAI_EMBEDDING_MODEL",
+            default="text-embedding-ada-002",
+        )
+        or "text-embedding-ada-002"
+    )
+    CHAT_MODEL: str = (
+        _first_env(
+            "AI_MODEL_DEPLOYMENT_NAME",
+            "AOAI_DEPLOYMENT_NAME",
+            default="gpt-4o-mini",
+        )
+        or "gpt-4o-mini"
+    )
+    MODEL_NAME: str = (
+        _first_env(
+            "OPENAI_MODEL_NAME",
+            "AI_MODEL_NAME",
+            default="gpt-4o-mini",
+        )
+        or "gpt-4o-mini"
+    )

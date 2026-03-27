@@ -1,7 +1,7 @@
 [project]
 name = "docsimplify"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI assistant to simplify documents for people with dyslexia and ADHD"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

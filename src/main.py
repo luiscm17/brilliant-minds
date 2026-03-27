@@ -1,26 +1,39 @@
-# main.py
-import asyncio
-from dotenv import load_dotenv
+"""FastAPI entrypoint for DocSimplify AI backend.
 
-from src.agents.orchestrator_agent import OrchestratorAgent
+Registers all routers under /api/v1 and configures CORS and middleware.
+"""
 
-load_dotenv()
+from fastapi import FastAPI, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
+from typing import List
+from src.config.settings import CORS_ORIGINS
 
-async def main():
-    orchestrator = OrchestratorAgent()
+from src.api.v1.routers import auth, documents, chats
 
-    user_query = """
-    Ayúdame a comprender este texto: 
-    La fotosíntesis es el proceso por el cual las plantas convierten la energía lumínica 
-    en energía química, utilizando dióxido de carbono y agua para producir glucosa y oxígeno.
-    """
+app = FastAPI(
+    title="DocSimplify AI",
+    description="AI backend to simplify documents for people with dyslexia and ADHD.",
+    version="1.0.0",
+)
 
-    result = await orchestrator.run(user_query)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
+)
 
-    print("\n" + "="*80)
-    print("✅ RESPUESTA FINAL DEL FOCUS ASSISTANT")
-    print("="*80)
-    print(result)
+api_router = APIRouter(prefix="/api/v1", tags=["v1"])
+for router in (
+    auth.router,
+    documents.router,
+    chats.router,
+):
+    api_router.include_router(router)
+app.include_router(api_router)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "DocSimplify AI"}
