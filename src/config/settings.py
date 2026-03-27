@@ -55,6 +55,17 @@ class AuthSettings:
     SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
     ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
+    ALLOW_INSECURE_DEV_SECRET: bool = os.getenv("ALLOW_INSECURE_DEV_SECRET", "false").lower() == "true"
+    
+    @classmethod
+    def get_secret_key(cls) -> str:
+        if cls.SECRET_KEY:
+            return cls.SECRET_KEY
+        if cls.ALLOW_INSECURE_DEV_SECRET == "development":
+            return "change-me-in-production"
+        else:
+            raise ValueError("JWT_SECRET_KEY is not configured for production use")
+    
 
 
 class AuthStorageSettings:
@@ -76,6 +87,7 @@ class BlobStorageSettings:
         "AZURE_STORAGE_CONTAINER",
         default="documents",
     )
+    AZURE_BLOB_STORAGE_URL: Optional[str] = os.getenv("AZURE_BLOB_STORAGE_URL")
 
     @classmethod
     def validate(cls) -> None:
@@ -83,6 +95,8 @@ class BlobStorageSettings:
             raise ValueError("AZURE_STORAGE_CONNECTION_STRING is not configured")
         if not cls.AZURE_STORAGE_CONTAINER:
             raise ValueError("AZURE_STORAGE_CONTAINER is not configured")
+        if not cls.AZURE_BLOB_STORAGE_URL:
+            raise ValueError("AZURE_BLOB_STORAGE_URL is not configured")
 
 
 class AISearchSettings:
@@ -180,12 +194,22 @@ class AzureOpenAISettings:
             raise ValueError("AOAI_DEPLOYMENT_NAME is not configured")
         return embedding_model_name
 
+    @classmethod
+    def chat_completions_uri(cls, deployment_name: Optional[str] = None) -> str:
+        if not cls._AOAI_ENDPOINT:
+            raise ValueError("AOAI_ENDPOINT is not configured")
+        deployment = deployment_name or cls.get_deployment_name()
+        return (
+            f"{cls._AOAI_ENDPOINT.rstrip('/')}/openai/deployments/{deployment}/chat/completions"
+            "?api-version=2024-02-01"
+        )
+
 
 class KnowledgeSourceSettings:
     """Centralized settings for the default knowledge source."""
 
     _KS_DEFAULT_NAME = "ks-name-default"
-    _KS_DEFAULT_DESCRIPTION = "Knowledge Source automática desde Blob con mi PDF"
+    _KS_DEFAULT_DESCRIPTION = "Knowledge Source description default"
     _KS_NAME: Optional[str] = os.getenv("KNOWLEDGE_SOURCE_NAME")
     _KS_DESCRIPTION: Optional[str] = os.getenv("KNOWLEDGE_SOURCE_DESCRIPTION")
 
@@ -386,3 +410,62 @@ class OpenAISettings:
         )
         or "gpt-4o-mini"
     )
+
+class DocumentIntelligenceSettings:
+    """Settings for Azure Document Intelligence (Form Recognizer)."""
+
+    DOCUMENT_INTELLIGENCE_ENDPOINT: Optional[str] = os.getenv("DOCUMENT_INTELLIGENCE_ENDPOINT")
+    DOCUMENT_INTELLIGENCE_KEY: Optional[str] = os.getenv("DOCUMENT_INTELLIGENCE_KEY")
+
+    @classmethod
+    def validate(cls) -> None:
+        """Ensure both endpoint and key are provided."""
+        if not cls.DOCUMENT_INTELLIGENCE_ENDPOINT or not cls.DOCUMENT_INTELLIGENCE_KEY:
+            raise ValueError("DOCUMENT_INTELLIGENCE_ENDPOINT and DOCUMENT_INTELLIGENCE_KEY must be set")
+
+class RagV3Settings:
+    """Settings for the multimodal-ready rag-v3 extension."""
+
+    ENABLED: bool = (os.getenv("RAG_V3_ENABLED", "false").lower() == "true")
+    INDEX_NAME: str = os.getenv("RAG_V3_INDEX_NAME", "documents-layout-rag-v3")
+    IMAGE_INDEX_NAME: str = os.getenv(
+        "RAG_V3_IMAGE_INDEX_NAME",
+        "documents-layout-rag-v3-images",
+    )
+    DATASOURCE_NAME: str = os.getenv(
+        "RAG_V3_DATASOURCE_NAME",
+        "documents-layout-rag-v3-datasource",
+    )
+    SKILLSET_NAME: str = os.getenv(
+        "RAG_V3_SKILLSET_NAME",
+        "documents-layout-rag-v3-skillset",
+    )
+    INDEXER_NAME: str = os.getenv(
+        "RAG_V3_INDEXER_NAME",
+        "documents-layout-rag-v3-indexer",
+    )
+    CONTENT_FIELD: str = os.getenv("RAG_V3_CONTENT_FIELD", "content")
+    VECTOR_FIELD: str = os.getenv("RAG_V3_VECTOR_FIELD", "content_vector")
+    IMAGE_VECTOR_FIELD: str = os.getenv("RAG_V3_IMAGE_VECTOR_FIELD", "image_vector")
+    TITLE_FIELD: str = os.getenv("RAG_V3_TITLE_FIELD", "document_title")
+    PATH_FIELD: str = os.getenv("RAG_V3_PATH_FIELD", "metadata_storage_path")
+    PAGE_FIELD: str = os.getenv("RAG_V3_PAGE_FIELD", "page_number")
+    IMAGE_PATH_FIELD: str = os.getenv("RAG_V3_IMAGE_PATH_FIELD", "image_path")
+    IMAGE_CAPTION_FIELD: str = os.getenv("RAG_V3_IMAGE_CAPTION_FIELD", "image_caption")
+    SOURCE_KIND_FIELD: str = os.getenv("RAG_V3_SOURCE_KIND_FIELD", "source_kind")
+    SECTION_KIND_FIELD: str = os.getenv("RAG_V3_SECTION_KIND_FIELD", "section_kind")
+
+    @classmethod
+    def embedding_dimensions(cls) -> int:
+        return LayoutRagSettings.embedding_dimensions()
+
+class AgenticRagSettings:
+    """Settings for Azure AI Search knowledge sources and knowledge bases."""
+
+    ENABLED: bool = (
+        _first_env("AGENTIC_RAG_ENABLED", default="false") or "false"
+    ).lower() == "true"
+
+# def share_ttl() -> timedelta:
+#     """Return how long public shares remain valid."""
+#     return timedelta(hours=CosmosDBSettings.SHARE_TTL_HOURS)
