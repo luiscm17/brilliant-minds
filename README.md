@@ -73,3 +73,9 @@ azd up  # Deploy entire solution
 - Azure CLI
 - Azure Developer CLI (azd)
 - Azure Subscription
+
+## Test agent memory
+pip install azure-ai-projects azure-identity python-dotenv agent-framework
+python -c "from agent_framework.azure import AzureOpenAIChatClient; import inspect; print(inspect.signature(AzureOpenAIChatClient.__init__))"
+python test_orchestrator.py
+
