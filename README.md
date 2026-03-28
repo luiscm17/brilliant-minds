@@ -4,6 +4,8 @@
 
 *Learn Your Way. Thrive Your Way*
 
+[![Demo Video](https://img.youtube.com/vi/_-s1Kfu7sLU/0.jpg)](https://www.youtube.com/watch?v=_-s1Kfu7sLU)
+
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![Python](https://img.shields.io/badge/python-3.13-blue)
 ![Node.js](https://img.shields.io/badge/node.js-18+-green)

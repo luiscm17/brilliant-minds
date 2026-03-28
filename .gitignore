@@ -422,3 +422,4 @@ npm-shrinkwrap.json
 
 # 
 .claude/
+.azure
