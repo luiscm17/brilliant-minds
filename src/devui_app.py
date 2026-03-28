@@ -11,11 +11,12 @@ if not os.getenv("AZURE_AI_PROJECT_ENDPOINT") or not os.getenv("AZURE_OPENAI_RES
     print("❌ Error: Faltan AZURE_AI_PROJECT_ENDPOINT o AZURE_OPENAI_RESPONSES_DEPLOYMENT_NAME en tu archivo .env")
     exit(1)
 
-print("Variables de entorno cargadas correctamente.\n")
+print("✅ Variables de entorno cargadas correctamente.\n")
 
 from agent_framework.devui import serve
 from agent_framework.orchestrations import ConcurrentBuilder
 
+# Importar tus clases
 from src.agents.task_selector_agent import TaskSelectorAgent
 from src.agents.simplifier_agent import SimplifierAgent
 from src.agents.task_decomposer_agent import TaskDecomposerAgent

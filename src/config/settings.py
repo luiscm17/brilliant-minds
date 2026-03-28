@@ -390,18 +390,21 @@ class LayoutRagSettings:
 class OpenAISettings:
     """Settings for Azure OpenAI (embeddings + completions)."""
 
-    ENDPOINT: Optional[str] = os.getenv("OPENAI_ENDPOINT", "AOAI_ENDPOINT")
-    API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY", "AOAI_KEY")
+    ENDPOINT: Optional[str] = _first_env("OPENAI_ENDPOINT", "AOAI_ENDPOINT")
+    API_KEY: Optional[str] = _first_env("OPENAI_API_KEY", "AOAI_KEY")
     EMBEDDING_MODEL: str = (
-        os.getenv(
+        _first_env(
+            "OPENAI_EMBEDDING_MODEL",
             "EMBEDDING_MODEL_NAME",
             default="text-embedding-ada-002",
         )
         or "text-embedding-ada-002"
     )
     EMBEDDING_DEPLOYMENT: str = (
-        os.getenv(
+        _first_env(
+            "OPENAI_EMBEDDING_DEPLOYMENT",
             "EMBEDDING_MODEL_DEPLOYMENT_NAME",
+            "OPENAI_EMBEDDING_MODEL",
             default="text-embedding-ada-002",
         )
         or "text-embedding-ada-002"

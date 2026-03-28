@@ -1,5 +1,8 @@
 from uuid import uuid4
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+
+from src.agents.orchestrator_service import orchestrator_service
 from src.core.dependencies import get_current_user_id
 from src.models.schemas.chats import (
     ChatCreate,
@@ -10,12 +13,8 @@ from src.models.schemas.chats import (
 )
 from src.services import search_service, share_service
 
-
-from src.agents.orchestrator_service import orchestrator_service
-
 router = APIRouter(prefix="/chats", tags=["chats"])
 shared_router = APIRouter(prefix="/shared", tags=["shared"])
-
 
 
 def _build_simplified_text(
@@ -56,36 +55,75 @@ def _build_explanation(
     return "El sistema respondio sin grounding porque aun no hay contexto indexado disponible."
 
 
-@router.post("", response_model=ChatResponse, response_model_by_alias=True)
+@router.post("", response_model=CreateChatResponse, response_model_by_alias=True)
+async def create_chat(body: ChatCreate | None = None):
+    _ = body
+    return CreateChatResponse(chatId=uuid4().hex)
+
+
+@router.post("/agent", response_model=ChatResponse, response_model_by_alias=True)
 async def chat_with_agent(
     body: ChatMessage,
     user_id: str = Depends(get_current_user_id),
 ):
-    """
-    Endpoint principal que usa el OrchestratorAgent para comprensión lectora con TDH.
-    """
+    """Optional endpoint that sends the prompt directly to the orchestrator."""
+    rag_error = None
+    try:
+        context_chunks, visual_references = await search_service.search_context_bundle(
+            body.message,
+            user_id=user_id,
+            top_k=3,
+            document_ids=body.document_ids,
+        )
+    except Exception as exc:
+        context_chunks, visual_references = [], []
+        rag_error = str(exc)
+
+    contextual_prompt = body.message
+    if context_chunks:
+        rag_context = "\n\n".join(
+            f"[Contexto {index + 1}]\n{chunk}" for index, chunk in enumerate(context_chunks)
+        )
+        contextual_prompt = (
+            "Responde usando el siguiente contexto documental recuperado por RAG.\n"
+            "Si el contexto es suficiente, priorizalo. Si no lo es, dilo con claridad.\n\n"
+            f"{rag_context}\n\n"
+            f"Pregunta del usuario: {body.message}"
+        )
+
     try:
         agent_text = await orchestrator_service.process_message(
             user_id=user_id,
-            user_message=body.message
+            user_message=contextual_prompt,
         )
 
+        explanation = _build_explanation(context_chunks, visual_references)
+        if rag_error:
+            explanation = (
+                explanation
+                + " El agente respondio, pero el entorno RAG no esta completo: "
+                + rag_error
+            )
+
         return ChatResponse(
+            originalMessage=body.message,
             simplifiedText=agent_text,
-            explanation="Respuesta generada por la orquesta educativa especializada en TDH",
-            tone="empático",
-            glossary=[]
+            explanation=explanation,
+            tone="empatico",
+            searchesPerformed=[body.message] if context_chunks else [],
+            visualReferences=visual_references,
+            glossary=[],
         )
 
     except Exception as e:
         print(f"[ERROR] en chat_with_agent: {e}")
         return ChatResponse(
-            simplifiedText="Lo siento, ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+            simplifiedText="Lo siento, ocurrio un error inesperado. Por favor, intentalo de nuevo.",
             explanation="Error en el procesamiento del agente",
             tone="neutral",
-            glossary=[]
+            glossary=[],
         )
-    
+
 
 @router.post(
     "/{chat_id}/messages",

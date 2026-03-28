@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
 
-class BrilliantMindsException(HTTPException):
+class DocSimplifyException(HTTPException):
     def __init__(
         self,
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -10,21 +10,21 @@ class BrilliantMindsException(HTTPException):
         super().__init__(status_code=status_code, detail=detail)
 
 
-class UserNotFoundError(BrilliantMindsException):
+class UserNotFoundError(DocSimplifyException):
     def __init__(self, detail: str = "User not found"):
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
 
-class EmailAlreadyExistsError(BrilliantMindsException):
+class EmailAlreadyExistsError(DocSimplifyException):
     def __init__(self, detail: str = "Email already registered"):
         super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
 
-class InvalidCredentialsError(BrilliantMindsException):
+class InvalidCredentialsError(DocSimplifyException):
     def __init__(self, detail: str = "Invalid credentials"):
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
 
 
-class UnauthorizedError(BrilliantMindsException):
+class UnauthorizedError(DocSimplifyException):
     def __init__(self, detail: str = "Not authorized to access this resource"):
         super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)

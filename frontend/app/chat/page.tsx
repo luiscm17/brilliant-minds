@@ -6,7 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import BeforeAfterPreview from "../../components/BeforeAfterPreview";
 import ChatResultCard from "../../components/ChatResultCard";
 import PipelineTimeline from "../../components/PipelineTimeline";
-import { createChat, listDocuments, sendChatMessage } from "../../lib/api";
+import {
+  createChat,
+  listDocuments,
+  sendAgentMessage,
+  sendChatMessage,
+} from "../../lib/api";
 import { useUser } from "../../context/UserContext";
 import { getPaletteLabel, readExperienceDraft } from "../../lib/profile";
 import type { ChatMessage, ChatResponse, DocumentItem } from "../../lib/types";
@@ -36,6 +41,7 @@ function ChatPageContent() {
   const [processingStage, setProcessingStage] = useState(0);
   const [fatigueLevel, setFatigueLevel] = useState(0);
   const [targetLanguage, setTargetLanguage] = useState("");
+  const [chatMode, setChatMode] = useState<"rag" | "agent">("rag");
   const [chatBooting, setChatBooting] = useState(true);
   const stageTimeoutsRef = useRef<number[]>([]);
   const activeStreamRef = useRef(0);
@@ -231,13 +237,18 @@ function ChatPageContent() {
         }, delay),
       );
 
-      const response = await sendChatMessage(chatId, {
+      const payload = {
         message: trimmedInput,
         documentIds:
           selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined,
         fatigueLevel,
         targetLanguage: targetLanguage || null,
-      });
+      };
+
+      const response =
+        chatMode === "agent"
+          ? await sendAgentMessage(payload)
+          : await sendChatMessage(chatId, payload);
 
       setProcessingStage(4);
       await pushAssistantMessage(response);
@@ -379,6 +390,9 @@ function ChatPageContent() {
               <span className="status-pill">
                 {isSending ? "Procesando" : chatId ? "Listo" : "Creando chat"}
               </span>
+              <span className="status-pill">
+                {chatMode === "agent" ? "Modo agente" : "Modo RAG"}
+              </span>
             </div>
 
             <button
@@ -506,6 +520,14 @@ function ChatPageContent() {
             <span className="status-pill">Frases {profile.maxSentenceLength}</span>
             <span className="status-pill">Docs {documents.length}</span>
             <span className="status-pill">Fatiga {fatigueLevel}</span>
+            <button
+              onClick={() =>
+                setChatMode((current) => (current === "rag" ? "agent" : "rag"))
+              }
+              className="secondary-button px-4 py-2 text-sm"
+            >
+              {chatMode === "rag" ? "Cambiar a agente" : "Cambiar a RAG"}
+            </button>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-[0.78fr_0.22fr]">

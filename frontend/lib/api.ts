@@ -354,6 +354,36 @@ export async function sendChatMessage(
   });
 }
 
+export async function sendAgentMessage(
+  payload: SendMessageRequest,
+): Promise<ChatResponse> {
+  if (USE_MOCK_API) {
+    await wait(650);
+
+    return {
+      originalMessage: payload.message,
+      simplifiedText: `Agente: ${payload.message}`,
+      explanation:
+        "Respuesta generada por el endpoint del agente para la demo.",
+      tone: "empatico",
+      audioUrl: null,
+      beeLineOverlay: true,
+      wcagReport: "Draft ready",
+      presetUsed: "agent",
+      readingLevelUsed: payload.fatigueLevel && payload.fatigueLevel > 0 ? "A1" : "A2",
+      emojiSummary: "agente conectado",
+      glossary: [],
+      searchesPerformed: [],
+      visualReferences: [],
+    };
+  }
+
+  return requestJson<ChatResponse>("/chats/agent", {
+    method: "POST",
+    body: payload,
+  });
+}
+
 export async function getChatComprehension(
   chatId: string,
   simplifiedText: string,

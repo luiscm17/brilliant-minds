@@ -34,16 +34,17 @@ class OrchestratorAgent:
             session = AgentSession()
 
         print(
-            f"🎼 Initiating the ADHD orchestration workflow... (session: {session.session_id[:8]}...)\n"
+            f"[ORCH] Initiating the ADHD orchestration workflow... "
+            f"(session: {session.session_id[:8]}...)\n"
         )
 
         # === STEP 1: Task Selector ===
-        print("📋 Running the Task Selector...")
+        print("[ORCH] Running the Task Selector...")
         selector_result = await self.selector.run(user_query, session=session)
-        print(f"→ Task Selector: {selector_result}\n")
+        print(f"[ORCH] Task Selector: {selector_result}\n")
 
         # === STEP 2: Fan-out ===
-        print("⚙️ Preparing the fan-out...")
+        print("[ORCH] Preparing the fan-out...")
         simplifier_agent = await self.simplifier.get_agent()
         decomposer_agent = await self.decomposer.get_agent()
         learning_agent = await self.learning_support.get_agent()
@@ -60,13 +61,13 @@ class OrchestratorAgent:
         {selector_result}
         """
 
-        print("🚀 Running the three agents in parallel...\n")
+        print("[ORCH] Running the three agents in parallel...\n")
         parallel_results = await workflow.run(
             parallel_context
         )  # No session available here
 
         # === STEP 3: Focus Assistant (the most important one) ===
-        print("🔄 Merging results with the Focus Assistant...")
+        print("[ORCH] Merging results with the Focus Assistant...")
         final_prompt = f"""
         You are the Focus Assistant. Combine all previous information and generate a final response that is clear, structured, and helpful for an ADHD learner.
 
