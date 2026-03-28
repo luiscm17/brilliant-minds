@@ -297,6 +297,7 @@ npm run start
 - **Backend AGENTS.md** – [AGENTS.md](./AGENTS.md) explains backend conventions, build commands, and code guidelines
 - **Frontend AGENTS.md** – [frontend/AGENTS.md](./frontend/AGENTS.md) covers Next.js-specific setup and best practices
 - **Docs folder** – [docs/](./docs/) contains architecture deep-dives, design decisions, and agent specifications
+- **Presentation Slides** – [docs/slides/](./docs/slides/) contains the project slide deck with the presentation for the project
 
 ## 🤝 Contributing
 
