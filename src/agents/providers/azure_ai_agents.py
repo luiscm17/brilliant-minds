@@ -1,5 +1,3 @@
-# src/agents/providers/azure_ai_agents.py
-
 from typing import Any
 from agent_framework.azure import AzureAIAgentsProvider
 from azure.identity.aio import AzureCliCredential
@@ -8,6 +6,8 @@ from src.config.settings import AgentSettings
 
 
 class AIAgentsProvider(BaseAgent):
+    """Create dynamic agents via AzureAIAgentsProvider with a shared credential."""
+
     def __init__(self):
         self._credential = AzureCliCredential()
         self._provider = AzureAIAgentsProvider(
@@ -29,7 +29,7 @@ class AIAgentsProvider(BaseAgent):
         return await self._provider.get_agent(az_agent.id)
 
     async def close(self) -> None:
-        """Cerrar manualmente conexiones y credenciales."""
+        """Close provider and credential when lifecycle ends."""
         if self._provider:
             await self._provider.__aexit__(None, None, None)
         if self._credential:

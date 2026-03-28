@@ -3,17 +3,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import BrandMark from "../../components/BrandMark";
 import ReadingLevelInfo from "../../components/ReadingLevelInfo";
 import { useUser } from "../../context/UserContext";
 import { updateCurrentUser } from "../../lib/api";
 import {
+  createDraftFromPalette,
   createProfileFromDraft,
+  deriveConditionFromPalette,
+  getPaletteColorLine,
+  getPaletteDescription,
+  getPaletteLabel,
+  getPaletteSwatches,
   readExperienceDraft,
+  writeExperienceDraft,
 } from "../../lib/profile";
 import type {
-  AccessibilityPreset,
-  ConditionType,
   CognitivePriority,
+  PalettePreference,
   ReadingLevel,
   UserProfile,
 } from "../../lib/types";
@@ -50,21 +57,59 @@ const priorityOptions: Array<{
   },
 ];
 
+const paletteOptions: PalettePreference[] = [
+  "calm",
+  "contrast",
+  "harmony",
+  "neutral",
+];
+
+function getPaletteCardPreview(palette: PalettePreference) {
+  switch (palette) {
+    case "calm":
+      return {
+        shell:
+          "bg-[linear-gradient(135deg,#f5eedc_0%,#faf4e7_52%,#ffffff_100%)]",
+        accent: "bg-[#a7c7e7]",
+        soft: "bg-[#cfe1b9]",
+        ink: "bg-[#587b9f]",
+      };
+    case "contrast":
+      return {
+        shell:
+          "bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_48%,#eef5fb_100%)]",
+        accent: "bg-[#004488]",
+        soft: "bg-[#ee7733]",
+        ink: "bg-[#111111]",
+      };
+    case "harmony":
+      return {
+        shell:
+          "bg-[linear-gradient(135deg,#eaf0e3_0%,#f5f8f1_50%,#ffffff_100%)]",
+        accent: "bg-[#bfd7ea]",
+        soft: "bg-[#c1e1c1]",
+        ink: "bg-[#5a7288]",
+      };
+    default:
+      return {
+        shell:
+          "bg-[linear-gradient(135deg,#fbf7ef_0%,#f4efe4_52%,#ffffff_100%)]",
+        accent: "bg-[#dfe8cf]",
+        soft: "bg-[#ee7733]",
+        ink: "bg-[#1c1c1c]",
+      };
+  }
+}
+
 export default function Onboarding() {
   const router = useRouter();
   const { isAuthenticated, setProfile } = useUser();
   const initialDraft = readExperienceDraft();
   const initialProfile = createProfileFromDraft(initialDraft);
-  const initialCondition: ConditionType =
-    initialProfile.hasAdhd && initialProfile.hasDyslexia
-      ? "combined"
-      : initialProfile.hasDyslexia
-        ? "dyslexia"
-        : initialProfile.hasAdhd
-          ? "adhd"
-          : "manual";
 
-  const [condition, setCondition] = useState<ConditionType>(initialCondition);
+  const [palettePreference, setPalettePreference] = useState<PalettePreference>(
+    initialDraft.palettePreference,
+  );
   const [readingLevel, setReadingLevel] = useState<ReadingLevel>(
     initialProfile.readingLevel,
   );
@@ -79,40 +124,46 @@ export default function Onboarding() {
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredPalette, setHoveredPalette] = useState<PalettePreference | null>(
+    null,
+  );
+  const [flashPalette, setFlashPalette] = useState<PalettePreference | null>(null);
 
-  const hasAdhd = condition === "adhd" || condition === "combined";
-  const hasDyslexia = condition === "dyslexia" || condition === "combined";
-
-  const preset: AccessibilityPreset =
-    hasAdhd && hasDyslexia
-      ? "combined"
-      : hasDyslexia
-        ? "dyslexia"
-        : hasAdhd
-          ? "adhd"
-          : "custom";
+  const resolvedCondition = deriveConditionFromPalette(palettePreference);
 
   const recommendationCopy = useMemo(() => {
-    if (hasAdhd && hasDyslexia) {
-      return "Se prioriza estructura visual, contraste y frases cortas para sostener foco y reducir friccion lectora.";
+    if (palettePreference === "harmony") {
+      return "Equilibra contraste, estructura visual y frases cortas para sostener un ritmo estable de lectura.";
     }
 
-    if (hasAdhd) {
-      return "Se prioriza continuidad visual, pasos concretos y menos densidad por bloque para sostener atencion.";
+    if (palettePreference === "calm") {
+      return "Suaviza la interfaz con tonos relajados, bloques estables y menos saturacion visual.";
     }
 
-    if (hasDyslexia) {
-      return "Se prioriza claridad, contraste y menor fatiga lectora con frases mas faciles de procesar.";
+    if (palettePreference === "contrast") {
+      return "Sube el contraste, refuerza la jerarquia visual y limpia la lectura para recorridos mas claros.";
     }
 
-    return "Se crea un perfil equilibrado que luego puede afinarse segun tu forma de leer.";
-  }, [hasAdhd, hasDyslexia]);
+    return "Parte de una base flexible y luego afina tono, densidad y prioridades a tu ritmo.";
+  }, [palettePreference]);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
     }
   }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!flashPalette) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFlashPalette(null);
+    }, 1200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [flashPalette]);
 
   const togglePriority = (value: CognitivePriority) => {
     setPriorities((current) =>
@@ -122,21 +173,34 @@ export default function Onboarding() {
     );
   };
 
+  const applyPalettePreference = (nextPalette: PalettePreference) => {
+    const seededDraft = createDraftFromPalette(nextPalette);
+    setPalettePreference(nextPalette);
+    setReadingLevel(seededDraft.readingLevel);
+    setTone(seededDraft.tone);
+    setMaxSentenceLength(seededDraft.maxSentenceLength);
+    setPriorities(seededDraft.priorities);
+    setFlashPalette(nextPalette);
+  };
+
   const handleContinue = async () => {
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
 
-    const nextProfile: UserProfile = {
-      hasAdhd,
-      hasDyslexia,
+    const nextDraft = {
+      ...initialDraft,
+      palettePreference,
+      condition: resolvedCondition,
       readingLevel,
-      preset,
       maxSentenceLength,
       tone,
       priorities,
     };
+    writeExperienceDraft(nextDraft);
+
+    const nextProfile: UserProfile = createProfileFromDraft(nextDraft);
 
     setSaving(true);
     setError(null);
@@ -159,42 +223,85 @@ export default function Onboarding() {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="studio-panel w-full p-5 md:p-8"
+      className="studio-panel hero-grid w-full p-5 md:p-8"
     >
       <div className="panel-grid items-start xl:grid-cols-[1.05fr_0.95fr]">
         <motion.div
           initial={{ opacity: 0, x: -18 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.08, duration: 0.45 }}
-          className="rounded-[28px] bg-[rgba(255,255,255,0.58)] p-6 md:p-8"
+          className="space-y-5 xl:sticky xl:top-28"
         >
-          <span className="eyebrow">Cognitive setup</span>
-          <h1 className="display-title mt-5 text-5xl md:text-7xl">
-            personaliza
-            <br />
-            la lectura
-            <br />
-            segun tu ritmo
-          </h1>
-          <p className="muted-copy mt-5 max-w-xl text-base leading-7 md:text-lg">
-            El sistema puede adaptar longitud de frases, tono, contraste y
-            estructura visual. La idea es que la experiencia sea realista para
-            TDAH, dislexia o combinacion de ambas.
-          </p>
+          <div className="dark-studio-panel rounded-[28px] p-6 text-white md:p-8">
+            <BrandMark showTagline />
+            <span className="eyebrow mt-6">Visual onboarding</span>
+            <h1 className="display-title mt-5 text-5xl md:text-7xl">
+              comienza
+              <br />por el
+              <br />ambiente
+              <br />visual
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-white/80 md:text-lg">
+              El sistema puede adaptar longitud de frases, tono, contraste y
+              estructura visual. Todo parte de la paleta que te hace sentir mas
+              comodo al leer.
+            </p>
 
-          <div className="mt-8 rounded-[24px] bg-white/70 p-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Recomendacion actual
-            </p>
-            <p className="mt-3 text-base leading-7 text-slate-700">
-              {recommendationCopy}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="status-pill">Preset: {preset}</span>
-              <span className="status-pill">Frases de hasta {maxSentenceLength} palabras</span>
-              <span className="status-pill">
-                Tono {tone === "calm_supportive" ? "calmado" : "neutral"}
-              </span>
+            <div className="mt-8 rounded-[24px] border border-white/10 bg-white/10 p-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/56">
+                Recomendacion actual
+              </p>
+              <p className="mt-3 text-base leading-7 text-white/82">
+                {recommendationCopy}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="status-pill border-white/10 bg-white/10 text-white">
+                  Paleta: {getPaletteLabel(palettePreference)}
+                </span>
+                <span className="status-pill border-white/10 bg-white/10 text-white">
+                  Frases de hasta {maxSentenceLength} palabras
+                </span>
+                <span className="status-pill border-white/10 bg-white/10 text-white">
+                  Tono {tone === "calm_supportive" ? "calmado" : "neutral"}
+                </span>
+              </div>
+
+              <motion.div
+                key={flashPalette ?? palettePreference}
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.28, ease: "easeOut" }}
+                className={`mt-5 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm text-white ${flashPalette ? "shadow-[0_10px_28px_rgba(255,255,255,0.08)]" : ""}`}
+                aria-live="polite"
+              >
+                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-white/16 px-2 text-[11px] font-semibold uppercase tracking-[0.12em]">
+                  {flashPalette ? "OK" : "Ahora"}
+                </span>
+                <span>Aplicado: {getPaletteLabel(palettePreference)}</span>
+              </motion.div>
+            </div>
+          </div>
+
+          <div className="studio-panel hero-grid rounded-[28px] p-5 md:p-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[24px] border border-white/8 bg-white/6 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/56">
+                  Interfaz
+                </p>
+                <p className="mt-3 text-sm leading-6 text-white/72">
+                  La paleta cambia fondo, tarjetas, botones y jerarquia visual
+                  antes de entrar al panel.
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-white/8 bg-white/6 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/56">
+                  Lectura
+                </p>
+                <p className="mt-3 text-sm leading-6 text-white/72">
+                  Aqui tambien ajustas frases, tono y ayudas cognitivas sin
+                  cambiar nada del backend.
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -203,86 +310,105 @@ export default function Onboarding() {
           initial={{ opacity: 0, x: 18 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.14, duration: 0.45 }}
-          className="rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,247,235,0.86))] p-6 md:p-8"
+          className="rounded-[28px] border border-white/10 bg-[rgba(10,18,27,0.72)] p-6 md:p-8"
         >
           <div className="flex items-center justify-between">
-            <span className="eyebrow">Tu perfil</span>
-            <span className="status-pill">{preset}</span>
+            <span className="eyebrow">Tu estilo</span>
+            <span className="status-pill">{getPaletteLabel(palettePreference)}</span>
           </div>
 
           <div className="mt-8 space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-600">
-              Condicion o contexto principal
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/62">
+              Que ambiente visual te ayuda mas
             </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                onClick={() => setCondition("adhd")}
-                className={
-                  condition === "adhd"
-                    ? "tone-card border-[rgba(13,122,116,0.3)] bg-[rgba(213,235,225,0.44)] text-left"
-                    : "tone-card text-left"
-                }
-              >
-                <span className="block font-semibold text-slate-800">TDAH</span>
-                <span className="mt-2 block text-sm leading-6 text-slate-600">
-                  Menos ruido, bloques claros y continuidad visual.
-                </span>
-              </button>
+              {paletteOptions.map((option) => {
+                const active = palettePreference === option;
+                const swatches = getPaletteSwatches(option);
+                const preview = getPaletteCardPreview(option);
 
-              <button
-                onClick={() => setCondition("dyslexia")}
-                className={
-                  condition === "dyslexia"
-                    ? "tone-card border-[rgba(13,122,116,0.3)] bg-[rgba(213,235,225,0.44)] text-left"
-                    : "tone-card text-left"
-                }
-              >
-                <span className="block font-semibold text-slate-800">
-                  Dislexia
-                </span>
-                <span className="mt-2 block text-sm leading-6 text-slate-600">
-                  Lectura mas limpia, contraste y menos fatiga visual.
-                </span>
-              </button>
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => applyPalettePreference(option)}
+                    onMouseEnter={() => setHoveredPalette(option)}
+                    onMouseLeave={() => setHoveredPalette(null)}
+                    onFocus={() => setHoveredPalette(option)}
+                    onBlur={() => setHoveredPalette(null)}
+                    className={
+                      active
+                        ? "tone-card border-[rgba(76,226,244,0.42)] bg-[rgba(76,226,244,0.12)] text-left shadow-[0_18px_34px_rgba(35,209,233,0.12)] ring-2 ring-[rgba(76,226,244,0.14)]"
+                        : "tone-card text-left hover:border-[rgba(76,226,244,0.24)] hover:shadow-[0_16px_30px_rgba(35,209,233,0.08)]"
+                    }
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <span className="eyebrow !px-3 !py-2">
+                        {active
+                          ? "Seleccionada"
+                          : hoveredPalette === option
+                            ? "Preview"
+                            : "Opcion"}
+                      </span>
+                      <span
+                        className={
+                          active
+                            ? "inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[var(--accent-cyan)] px-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#04131e] shadow-[0_8px_20px_rgba(35,209,233,0.24)]"
+                            : "inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-white/12 bg-white px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--teal-deep)]"
+                        }
+                      >
+                        {active ? "OK" : "Ver"}
+                      </span>
+                    </div>
 
-              <button
-                onClick={() => setCondition("combined")}
-                className={
-                  condition === "combined"
-                    ? "tone-card border-[rgba(13,122,116,0.3)] bg-[rgba(213,235,225,0.44)] text-left"
-                    : "tone-card text-left"
-                }
-              >
-                <span className="block font-semibold text-slate-800">
-                  Ambas condiciones
-                </span>
-                <span className="mt-2 block text-sm leading-6 text-slate-600">
-                  Combina estructura visual, contraste y frases mas cortas.
-                </span>
-              </button>
+                    <div
+                      className={`mb-4 overflow-hidden rounded-[18px] border border-white/80 p-3 ${preview.shell}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <div className={`h-2.5 w-16 rounded-full ${preview.ink} opacity-90`} />
+                          <div className={`h-2.5 w-24 rounded-full ${preview.ink} opacity-55`} />
+                          <div className={`h-2.5 w-20 rounded-full ${preview.ink} opacity-35`} />
+                        </div>
+                        <div className="space-y-2">
+                          <div className={`h-8 w-8 rounded-2xl ${preview.accent} shadow-sm`} />
+                          <div className={`h-5 w-12 rounded-full ${preview.soft} opacity-90`} />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <div className={`h-10 flex-1 rounded-2xl ${preview.accent} opacity-90`} />
+                        <div className={`h-10 w-16 rounded-2xl ${preview.soft}`} />
+                      </div>
+                    </div>
 
-              <button
-                onClick={() => setCondition("manual")}
-                className={
-                  condition === "manual"
-                    ? "tone-card border-[rgba(13,122,116,0.3)] bg-[rgba(213,235,225,0.44)] text-left"
-                    : "tone-card text-left"
-                }
-              >
-                <span className="block font-semibold text-slate-800">
-                  Personalizado
-                </span>
-                <span className="mt-2 block text-sm leading-6 text-slate-600">
-                  Ajuste manual sin asociarlo a una condicion concreta.
-                </span>
-              </button>
+                    <span className="flex items-center gap-2">
+                      {swatches.map((color, index) => (
+                        <span
+                          key={`${option}-${color}-${index}`}
+                          className="inline-block h-4 w-4 rounded-full border border-white/90 shadow-sm"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </span>
+                    <span className="block font-semibold text-white">
+                      {getPaletteLabel(option)}
+                    </span>
+                    <span className="mt-2 block text-sm leading-6 text-white/68">
+                      {getPaletteDescription(option)}
+                    </span>
+                    <span className="mt-3 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--teal-deep)]">
+                      {getPaletteColorLine(option)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           <div className="mt-6 space-y-5">
             <div>
-              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-slate-600">
+              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-white/62">
                 Nivel de lectura
               </label>
               <select
@@ -301,11 +427,12 @@ export default function Onboarding() {
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-slate-600">
+              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-white/62">
                 Tono de explicacion
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
+                  type="button"
                   onClick={() => setTone("calm_supportive")}
                   className={
                     tone === "calm_supportive"
@@ -316,6 +443,7 @@ export default function Onboarding() {
                   Calmado y contenedor
                 </button>
                 <button
+                  type="button"
                   onClick={() => setTone("neutral_clear")}
                   className={
                     tone === "neutral_clear"
@@ -329,7 +457,7 @@ export default function Onboarding() {
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-slate-600">
+              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-white/62">
                 Longitud maxima de frase
               </label>
               <select
@@ -345,7 +473,7 @@ export default function Onboarding() {
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-slate-600">
+              <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.14em] text-white/62">
                 Prioridades cognitivas
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -355,17 +483,18 @@ export default function Onboarding() {
                   return (
                     <button
                       key={option.value}
+                      type="button"
                       onClick={() => togglePriority(option.value)}
                       className={
                         active
-                          ? "tone-card border-[rgba(13,122,116,0.3)] bg-[rgba(213,235,225,0.44)] text-left"
+                          ? "tone-card border-[rgba(76,226,244,0.3)] bg-[rgba(76,226,244,0.12)] text-left"
                           : "tone-card text-left"
                       }
                     >
-                      <span className="block font-semibold text-slate-800">
+                      <span className="block font-semibold text-white">
                         {option.label}
                       </span>
-                      <span className="mt-2 block text-sm leading-6 text-slate-600">
+                      <span className="mt-2 block text-sm leading-6 text-white/68">
                         {option.description}
                       </span>
                     </button>
@@ -377,16 +506,17 @@ export default function Onboarding() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
+              type="button"
               onClick={handleContinue}
               disabled={saving}
               className="primary-button flex-1"
             >
-              {saving ? "Guardando..." : "Guardar perfil"}
+              {saving ? "Guardando..." : "Guardar estilo"}
             </button>
           </div>
 
           {error ? (
-            <div className="mt-4 rounded-2xl bg-[rgba(222,123,89,0.14)] p-4 text-sm text-[#96472f]">
+            <div className="mt-4 rounded-2xl border border-[rgba(255,125,108,0.22)] bg-[rgba(255,125,108,0.12)] p-4 text-sm text-[#ffd2cb]">
               {error}
             </div>
           ) : null}

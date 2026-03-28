@@ -58,7 +58,12 @@ class AuthSettings:
     ALGORITHM: str = os.getenv("JWT_ALGORITHM") or "HS256"
     EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
     ALLOW_INSECURE_DEV_SECRET: bool = (
-        os.getenv("ALLOW_INSECURE_DEV_SECRET", "false").lower() == "true"
+        _first_env(
+            "ALLOW_INSECURE_DEV_SECRET",
+            "ALLOW_INSECURE_DEV_JWT",
+            default="false",
+        ).lower()
+        == "true"
     )
 
     @classmethod
@@ -418,6 +423,17 @@ class OpenAISettings:
         or "gpt-4o-mini"
     )
 
+    VISION_DEPLOYMENT: str = (
+        _first_env(
+            "OPENAI_VISION_DEPLOYMENT",
+            "RAG_V3_VISION_DEPLOYMENT",
+            "AI_MODEL_DEPLOYMENT_NAME",
+            "AOAI_DEPLOYMENT_NAME",
+            default="gpt-4o-mini",
+        )
+        or "gpt-4o-mini"
+    )
+
 
 class DocumentIntelligenceSettings:
     """Settings for Azure Document Intelligence (Form Recognizer)."""
@@ -435,6 +451,30 @@ class DocumentIntelligenceSettings:
                 "DOCUMENT_INTELLIGENCE_ENDPOINT and DOCUMENT_INTELLIGENCE_KEY must be set"
             )
 
+class ProcessingTriggerSettings:
+    """Settings for decoupled document processing triggers."""
+
+    MODE: str = (_first_env("PROCESSING_TRIGGER_MODE", default="inline") or "inline").strip().lower()
+    FUNCTION_URL: Optional[str] = _first_env(
+        "PROCESSING_FUNCTION_URL",
+        "AZURE_FUNCTION_PROCESSING_URL",
+    )
+    SHARED_SECRET: Optional[str] = _first_env(
+        "PROCESSING_FUNCTION_SECRET",
+        "AZURE_FUNCTION_PROCESSING_SECRET",
+    )
+    TIMEOUT_SECONDS: int = int(
+        _first_env("PROCESSING_TRIGGER_TIMEOUT_SECONDS", default="15") or "15"
+    )
+
+    @classmethod
+    def use_azure_function(cls) -> bool:
+        return cls.MODE == "azure_function"
+
+    @classmethod
+    def validate_function_mode(cls) -> None:
+        if not cls.FUNCTION_URL:
+            raise ValueError("PROCESSING_FUNCTION_URL is not configured")
 
 class RagV3Settings:
     """Settings for the multimodal-ready rag-v3 extension."""

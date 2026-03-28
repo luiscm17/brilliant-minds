@@ -11,6 +11,13 @@ type BeforeAfterPreviewProps = {
 const beforeText =
   "El comite academico informa que el documento adjunto debe revisarse con caracter prioritario, considerando requisitos, plazos, anexos y observaciones tecnicas distribuidas a lo largo de varias secciones.";
 
+function getModeLabel(preset: AccessibilityPreset) {
+  if (preset === "dyslexia") return "Marfil + azul";
+  if (preset === "adhd") return "Arena + cielo";
+  if (preset === "combined") return "Salvia + niebla";
+  return "Base neutra";
+}
+
 function getAfterBlocks(
   preset: AccessibilityPreset,
   readingLevel: string,
@@ -102,23 +109,23 @@ export default function BeforeAfterPreview({
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-[24px] border border-[rgba(23,49,59,0.1)] bg-[rgba(255,255,255,0.72)] p-5">
+      <div className="rounded-[24px] border border-white/10 bg-white/6 p-5">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/54">
             Antes
           </p>
           <span className="status-pill">Texto original</span>
         </div>
-        <p className="mt-4 text-base leading-8 text-slate-700">{beforeText}</p>
+        <p className="mt-4 text-base leading-8 text-white/72">{beforeText}</p>
       </div>
 
-      <div className="rounded-[24px] border border-[rgba(13,122,116,0.18)] bg-[rgba(213,235,225,0.3)] p-5">
+      <div className="rounded-[24px] border border-[rgba(76,226,244,0.24)] bg-[rgba(76,226,244,0.12)] p-5">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--teal-deep)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
             Despues
           </p>
           <span className="status-pill">
-            {preset} · {readingLevel}
+            {getModeLabel(preset)} · {readingLevel}
           </span>
         </div>
 
@@ -126,17 +133,17 @@ export default function BeforeAfterPreview({
           {afterBlocks.map((block) => (
             <div
               key={`${block.title}-${block.highlight}`}
-              className="rounded-2xl border border-white/60 bg-white/80 px-4 py-3"
+              className="rounded-2xl border border-white/10 bg-white/8 px-4 py-3"
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--teal-deep)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-cyan)]">
                   {block.title}
                 </p>
-                <span className="inline-flex rounded-full bg-[rgba(13,122,116,0.12)] px-3 py-1 text-xs font-semibold text-[var(--teal-deep)]">
+                <span className="inline-flex rounded-full bg-[rgba(76,226,244,0.12)] px-3 py-1 text-xs font-semibold text-[var(--accent-cyan)]">
                   {block.highlight}
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-700">
+              <p className="mt-3 text-sm leading-7 text-white/72">
                 {block.line}
               </p>
             </div>

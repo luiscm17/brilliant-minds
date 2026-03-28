@@ -108,7 +108,7 @@ Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-    "message": "Hola, ¿puedes simplificar este documento?",
+    "message": "Hola, ¿puedes explicarme que es la fotosintesis?",
     "fatigueLevel": 1
 }
 

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useUser } from "../../context/UserContext";
+import { getPaletteLabel, readExperienceDraft } from "../../lib/profile";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -24,10 +25,7 @@ export default function Dashboard() {
     return null;
   }
 
-  const activeSupports = [
-    profile.hasAdhd ? "TDAH" : null,
-    profile.hasDyslexia ? "Dislexia" : null,
-  ].filter(Boolean);
+  const paletteLabel = getPaletteLabel(readExperienceDraft().palettePreference);
 
   return (
     <motion.section
@@ -40,10 +38,11 @@ export default function Dashboard() {
         initial={{ opacity: 0, scale: 0.985 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.05, duration: 0.45 }}
-        className="studio-panel overflow-hidden p-6 md:p-8"
+        className="studio-panel hero-grid overflow-hidden p-6 md:p-8"
       >
-        <div className="orb right-[-3rem] top-[-2rem] h-36 w-36 bg-[rgba(13,122,116,0.2)]" />
-        <div className="orb bottom-[-2rem] left-12 h-28 w-28 bg-[rgba(226,184,95,0.36)]" />
+        <div className="orb right-[-3rem] top-[-2rem] h-36 w-36 bg-[rgba(0,68,136,0.18)]" />
+        <div className="orb bottom-[-2rem] left-12 h-28 w-28 bg-[rgba(238,119,51,0.22)]" />
+        <div className="challenge-ribbon right-[-4rem] top-[7rem] w-[18rem] rotate-[12deg]" />
 
         <div className="relative z-10 grid gap-7 xl:grid-cols-[1.1fr_0.9fr] xl:items-end">
           <div>
@@ -55,52 +54,49 @@ export default function Dashboard() {
               <br />
               al mismo tiempo
             </h1>
-            <p className="muted-copy mt-5 max-w-2xl text-base leading-8 md:text-lg">
+            <p className="reading-copy mt-5 text-base leading-8 md:text-lg">
               Tu espacio ya esta adaptado para reducir carga cognitiva, suavizar
               explicaciones y mantener un ritmo de lectura mas facil de seguir.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="status-pill">Nivel {profile.readingLevel}</span>
-              <span className="status-pill">Preset {profile.preset}</span>
+              <span className="status-pill">{paletteLabel}</span>
               <span className="status-pill">
-                {activeSupports.length > 0
-                  ? activeSupports.join(" + ")
-                  : "Personalizado"}
+                Tono {profile.tone === "calm_supportive" ? "calmado" : "neutral"}
               </span>
+              <span className="status-pill">Demo lista</span>
             </div>
           </div>
 
-          <div className="rounded-[28px] bg-[rgba(255,255,255,0.78)] p-5">
-            <p className="text-sm uppercase tracking-[0.14em] text-slate-500">
-              Accesibilidad activa
+          <div className="dark-studio-panel rounded-[28px] p-5 text-white">
+            <p className="text-sm uppercase tracking-[0.14em] text-white/60">
+              Estilo visual activo
             </p>
-            <p className="mt-3 text-3xl font-semibold text-slate-800">
-              {activeSupports.length > 0
-                ? activeSupports.join(" + ")
-                : "Perfil personalizado"}
+            <p className="mt-3 text-3xl font-semibold text-white">
+              {paletteLabel}
             </p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+            <p className="mt-3 text-sm leading-7 text-white/80">
               El sistema ya esta listo para procesar documentos, simplificar
               texto y responder desde el chat con el tono que configuraste.
             </p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[rgba(23,49,59,0.08)] bg-white/80 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/56">
                   Tono
                 </p>
-                <p className="mt-2 font-semibold text-slate-800">
+                <p className="mt-2 font-semibold text-white">
                   {profile.tone === "calm_supportive"
                     ? "Calmado y contenedor"
                     : "Neutro y directo"}
                 </p>
               </div>
-              <div className="rounded-2xl border border-[rgba(23,49,59,0.08)] bg-white/80 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/56">
                   Frases
                 </p>
-                <p className="mt-2 font-semibold text-slate-800">
+                <p className="mt-2 font-semibold text-white">
                   Hasta {profile.maxSentenceLength} palabras
                 </p>
               </div>
@@ -115,31 +111,31 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.12, duration: 0.4 }}
           onClick={() => router.push("/documents")}
-          className="studio-panel group p-6 text-left md:p-7"
+          className="studio-panel group hero-grid p-6 text-left md:p-7"
         >
           <span className="eyebrow">Paso 1</span>
-          <h2 className="mt-5 text-4xl font-semibold text-slate-800">
+          <h2 className="mt-5 text-4xl font-semibold text-white">
             Sube el material
           </h2>
-          <p className="muted-copy mt-3 max-w-lg text-base leading-8">
+          <p className="reading-copy mt-3 text-base leading-8">
             Carga un PDF o Word para preparar el contexto. Mientras mas denso
             sea el documento, mas evidente sera la mejora en la demo.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-white/75 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <div className="reading-card">
+              <p className="reading-label">
                 Entrada
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+              <p className="mt-2 text-sm leading-7 text-white/74">
                 PDF, DOC y DOCX con texto complejo o muy extenso.
               </p>
             </div>
-            <div className="rounded-2xl bg-white/75 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <div className="reading-card">
+              <p className="reading-label">
                 Resultado
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+              <p className="mt-2 text-sm leading-7 text-white/74">
                 Documento listo para grounding y simplificacion.
               </p>
             </div>
@@ -155,7 +151,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.18, duration: 0.4 }}
           onClick={() => router.push("/chat")}
-          className="studio-panel dark-studio-panel group overflow-hidden p-6 text-left text-white md:p-7"
+          className="studio-panel dark-studio-panel group hero-grid overflow-hidden p-6 text-left text-white md:p-7"
         >
           <div className="relative z-10">
             <span className="eyebrow border-white/18 bg-white/10 text-white">
@@ -201,8 +197,8 @@ export default function Dashboard() {
         transition={{ delay: 0.22, duration: 0.35 }}
         className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]"
       >
-        <div className="studio-panel p-5 md:p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <div className="studio-panel hero-grid p-5 md:p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/60">
             Prioridades activas
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -214,15 +210,15 @@ export default function Dashboard() {
           </div>
           <p className="muted-copy mt-4 max-w-2xl text-sm leading-7">
             Estas prioridades ayudan a que la demo se vea coherente con la
-            condicion seleccionada y con el tipo de apoyo cognitivo que espera
-            el usuario.
+            paleta elegida y con el tipo de apoyo cognitivo que espera el
+            usuario.
           </p>
         </div>
-        <div className="studio-panel p-5 md:p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <div className="studio-panel hero-grid p-5 md:p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/60">
             Siguiente mejor paso
           </p>
-          <p className="mt-4 text-2xl font-semibold text-slate-800">
+          <p className="mt-4 text-2xl font-semibold text-white">
             Empieza por documentos si quieres una demo mas fuerte.
           </p>
           <p className="muted-copy mt-3 text-sm leading-7">

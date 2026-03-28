@@ -8,5 +8,10 @@ const readingLevelCopy: Record<ReadingLevel, string> = {
 };
 
 export default function ReadingLevelInfo({ level }: { level: ReadingLevel }) {
-  return <p className="text-sm text-gray-500">{readingLevelCopy[level]}</p>;
+  return (
+    <div className="reading-card">
+      <p className="reading-label">Referencia de lectura</p>
+      <p className="mt-2 text-sm leading-7 text-white/78">{readingLevelCopy[level]}</p>
+    </div>
+  );
 }

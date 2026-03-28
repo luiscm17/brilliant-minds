@@ -6,6 +6,12 @@ export type AccessibilityPreset =
   | "combined"
   | "custom";
 
+export type PalettePreference =
+  | "neutral"
+  | "calm"
+  | "contrast"
+  | "harmony";
+
 export type ConditionType =
   | "adhd"
   | "dyslexia"
@@ -39,6 +45,7 @@ export type UserProfile = {
 };
 
 export type ExperienceDraft = {
+  palettePreference: PalettePreference;
   condition: ConditionType;
   readingLevel: ReadingLevel;
   intensity: AdaptationIntensity;
@@ -75,6 +82,7 @@ export type RegisterRequest = {
 export type DocumentItem = {
   documentId: string;
   filename: string;
+  blobName?: string;
   status: DocumentStatus;
 };
 

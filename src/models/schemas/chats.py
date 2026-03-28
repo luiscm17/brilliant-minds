@@ -31,6 +31,7 @@ class ChatResponse(ApiModel):
     emoji_summary: Optional[str] = Field(default=None, alias="emojiSummary")
     glossary: list[dict] = Field(default_factory=list)
     searches_performed: list[str] = Field(default_factory=list, alias="searchesPerformed")
+    visual_references: list[dict] = Field(default_factory=list, alias="visualReferences")
 
 
 class ShareResponse(ApiModel):

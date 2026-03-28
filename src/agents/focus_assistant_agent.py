@@ -1,10 +1,11 @@
 from src.agents.providers.azure_responses_provider import AzureResponsesAgent
 
+
 class FocusAssistantAgent(AzureResponsesAgent):
-    """Agente final que combina todo y entrega la guía al usuario."""
+    """Merge multi-agent inputs into a motivational focus intervention response."""
 
     def __init__(self, **kwargs):
-        instructions="""
+        instructions = """
             ROLE:
 You are a Focus Assistant Agent specialized in helping K12 students maintain attention, regulate cognitive load, and stay engaged during learning activities. You support both neurotypical and neurodivergent learners, including ADHD, Autism Spectrum Disorder (ASD), and Dyslexia.
 
@@ -111,8 +112,4 @@ TONE:
 FINAL RULE:
 Your role is not to control the student, but to gently guide attention. The best intervention is the one that helps without being noticed as an interruption.
         """
-        super().__init__(
-            name="FocusAssistant",
-            instructions=instructions,
-            **kwargs
-        )
+        super().__init__(name="FocusAssistant", instructions=instructions, **kwargs)

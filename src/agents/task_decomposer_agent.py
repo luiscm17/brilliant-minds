@@ -1,10 +1,11 @@
 from src.agents.providers.azure_responses_provider import AzureResponsesAgent
 
+
 class TaskDecomposerAgent(AzureResponsesAgent):
-    """Descompone la tarea de lectura en pasos pequeños."""
+    """Break reading tasks into digestible steps for TDH students."""
 
     def __init__(self, **kwargs):
-        instructions="""
+        instructions = """
             ROLE:
 You are an educational task decomposition agent specialized in supporting K12 students, including neurodivergent learners such as ADHD, Autism Spectrum Disorder (ASD), and Dyslexia.
 
@@ -105,21 +106,6 @@ CONSTRAINTS:
 - Do NOT overload the student with too many steps at once.
 - Keep clarity and usability as the highest priority.
 
-OUTPUT FORMAT:
-You MUST return a valid JSON object:
-
-{
-  "task_goal": "...",
-  "steps": [
-    "Step 1: ...",
-    "Step 2: ..."
-  ],
-  "support": {
-    "checklist": ["...", "..."],
-    "next_action": "..."
-  }
-}
-
 If mode is "direct", omit the "support" field.
 
 TONE:
@@ -133,7 +119,5 @@ Always prioritize task clarity, step-by-step execution, and reduction of cogniti
         """
 
         super().__init__(
-            name="TaskDecomposerAgent",
-            instructions=instructions,
-            **kwargs
+            name="TaskDecomposerAgent", instructions=instructions, **kwargs
         )

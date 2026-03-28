@@ -8,12 +8,13 @@ import ChatResultCard from "../../components/ChatResultCard";
 import PipelineTimeline from "../../components/PipelineTimeline";
 import { createChat, listDocuments, sendChatMessage } from "../../lib/api";
 import { useUser } from "../../context/UserContext";
+import { getPaletteLabel, readExperienceDraft } from "../../lib/profile";
 import type { ChatMessage, ChatResponse, DocumentItem } from "../../lib/types";
 
 const promptSuggestions = [
   "Simplifica este texto en nivel A2",
   "Explicame este contrato con bullets calmados",
-  "Resume los puntos clave para una persona con TDAH",
+  "Resume los puntos clave con una lectura mas estable",
 ];
 
 const CHAT_STORAGE_KEY = "active_chat_id";
@@ -35,6 +36,7 @@ function ChatPageContent() {
   const [processingStage, setProcessingStage] = useState(0);
   const [fatigueLevel, setFatigueLevel] = useState(0);
   const [targetLanguage, setTargetLanguage] = useState("");
+  const [chatBooting, setChatBooting] = useState(true);
   const stageTimeoutsRef = useRef<number[]>([]);
   const activeStreamRef = useRef(0);
   const hasAssistantMessage = messages.some((message) => message.role === "assistant");
@@ -52,6 +54,7 @@ function ChatPageContent() {
 
   useEffect(() => {
     async function prepareChat() {
+      setChatBooting(true);
       const savedChatId =
         typeof window !== "undefined"
           ? window.localStorage.getItem(CHAT_STORAGE_KEY)
@@ -76,6 +79,8 @@ function ChatPageContent() {
         setDocuments(nextDocuments);
       } catch {
         setDocuments([]);
+      } finally {
+        setChatBooting(false);
       }
     }
 
@@ -252,6 +257,7 @@ function ChatPageContent() {
     return null;
   }
 
+  const paletteLabel = getPaletteLabel(readExperienceDraft().palettePreference);
   const completedDocuments = documents.filter(
     (document) => document.status === "completed",
   );
@@ -269,7 +275,7 @@ function ChatPageContent() {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={immersiveMode ? "w-full" : "studio-panel w-full p-5 md:p-8"}
+      className={immersiveMode ? "w-full" : "studio-panel hero-grid w-full p-5 md:p-8"}
     >
       <div
         className={
@@ -283,7 +289,7 @@ function ChatPageContent() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.08, duration: 0.4 }}
-            className="rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(248,241,230,0.76))] p-6"
+            className="dark-studio-panel rounded-[28px] p-6 text-white"
           >
             <span className="eyebrow">Conversation Lab</span>
             <h1 className="display-title mt-5 text-5xl xl:text-6xl">
@@ -291,9 +297,9 @@ function ChatPageContent() {
               <br />
               con claridad
             </h1>
-            <p className="muted-copy mt-5 text-base leading-7">
-              Usa prompts cortos y lleva la demo hacia una respuesta clara,
-              calmada y facil de seguir.
+            <p className="reading-copy mt-5 text-base leading-8 text-white/84">
+              Empieza con una instruccion breve y deja que la interfaz muestre
+              una respuesta mas clara, calmada y facil de seguir.
             </p>
 
             <div className="mt-8 space-y-3">
@@ -301,38 +307,37 @@ function ChatPageContent() {
                 <button
                   key={suggestion}
                   onClick={() => handleSend(suggestion)}
-                  className="ghost-button w-full justify-start text-left"
+                  className="secondary-button w-full justify-start border-white/10 bg-white/10 text-left text-white"
                 >
                   {suggestion}
                 </button>
               ))}
             </div>
 
-            <div className="mt-8 rounded-[24px] bg-[rgba(13,122,116,0.08)] p-4">
-              <p className="text-sm uppercase tracking-[0.14em] text-[var(--teal-deep)]">
-                Perfil activo
+            <div className="mt-8 rounded-[24px] border border-white/12 bg-white/8 p-4">
+              <p className="text-sm uppercase tracking-[0.14em] text-white/58">
+                Estilo activo
               </p>
-              <p className="mt-2 text-xl font-semibold text-slate-800">
-                {profile.preset} · {profile.readingLevel}
+              <p className="mt-2 text-xl font-semibold text-white">
+                {paletteLabel} - {profile.readingLevel}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Ajustado para {profile.hasAdhd ? "TDAH" : "enfoque general"}
-                {profile.hasDyslexia ? " y dislexia" : ""}.
+              <p className="mt-2 text-sm leading-6 text-white/80">
+                Ajustado para una lectura mas clara, calmada y facil de seguir.
               </p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 text-sm leading-6 text-white/70">
                 Chat activo: {chatId ? chatId.slice(0, 8) : "creando..."}.
                 Documentos disponibles: {documents.length}.
               </p>
             </div>
 
-            <div className="mt-6 rounded-[24px] bg-white/72 p-4">
-              <p className="text-sm uppercase tracking-[0.14em] text-[var(--teal-deep)]">
+            <div className="mt-6 rounded-[24px] border border-white/12 bg-white/8 p-4">
+              <p className="text-sm uppercase tracking-[0.14em] text-white/58">
                 Contexto para el chat
               </p>
               {completedDocuments.length === 0 ? (
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  No hay documentos listos. El chat puede responder sin grounding
-                  o usando documentos que aun siguen en procesamiento.
+                <p className="mt-3 text-sm leading-6 text-white/72">
+                  Aun no hay documentos listos. Puedes conversar igual, pero la
+                  mejor demo aparece cuando ya hay material preparado.
                 </p>
               ) : (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -344,8 +349,8 @@ function ChatPageContent() {
                         onClick={() => toggleDocumentSelection(document.documentId)}
                         className={
                           isSelected
-                            ? "secondary-button px-3 py-2 text-sm"
-                            : "ghost-button px-3 py-2 text-sm"
+                            ? "primary-button px-3 py-2 text-sm"
+                            : "secondary-button border-white/10 bg-white/10 px-3 py-2 text-sm text-white"
                         }
                       >
                         {document.filename}
@@ -354,9 +359,9 @@ function ChatPageContent() {
                   })}
                 </div>
               )}
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 text-sm leading-6 text-white/70">
                 Seleccionados: {selectedDocumentIds.length}. Si no eliges ninguno,
-                el mensaje se enviara sin documentos asociados.
+                el mensaje se enviara sin apoyo documental.
               </p>
             </div>
           </motion.aside>
@@ -366,7 +371,7 @@ function ChatPageContent() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.14, duration: 0.4 }}
-          className="rounded-[28px] bg-[rgba(255,250,242,0.72)] p-4 md:p-5"
+          className="rounded-[28px] border border-white/12 bg-[rgba(13,19,28,0.88)] p-4 md:p-5"
         >
           <div className="flex flex-wrap items-center justify-between gap-3 px-2 pb-4">
             <div className="flex items-center gap-2">
@@ -422,23 +427,42 @@ function ChatPageContent() {
             />
           </div>
 
-          <div className="min-h-[26rem] space-y-4 rounded-[24px] bg-[rgba(255,255,255,0.56)] p-4 md:p-5">
-            {messages.length === 0 ? (
+          <div className="min-h-[26rem] space-y-4 rounded-[24px] border border-white/10 bg-[rgba(255,255,255,0.07)] p-4 md:p-5">
+            {chatBooting ? (
               <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-                <div className="rounded-[24px] border border-dashed border-[rgba(23,49,59,0.14)] bg-white/60 p-6">
-                  <p className="text-lg font-semibold text-slate-800">
-                    Aun no hay mensajes
+                <div className="rounded-[24px] border border-white/10 bg-white/8 p-6">
+                  <div className="skeleton-block h-5 w-40" />
+                  <div className="mt-4 space-y-3">
+                    <div className="skeleton-block h-4 w-full" />
+                    <div className="skeleton-block h-4 w-[85%]" />
+                    <div className="skeleton-block h-4 w-[70%]" />
+                  </div>
+                </div>
+                <div className="rounded-[24px] border border-white/10 bg-white/8 p-5">
+                  <div className="skeleton-block h-5 w-32" />
+                  <div className="mt-4 space-y-3">
+                    <div className="skeleton-block h-4 w-[92%]" />
+                    <div className="skeleton-block h-4 w-[76%]" />
+                    <div className="skeleton-block h-4 w-[84%]" />
+                  </div>
+                </div>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="rounded-[24px] border border-dashed border-[rgba(76,226,244,0.28)] bg-white/8 p-6">
+                  <p className="text-lg font-semibold text-white">
+                    Todo listo para empezar
                   </p>
-                  <p className="mt-2 max-w-xl text-sm leading-7 text-slate-600">
-                    Prueba una sugerencia, activa la demo guiada o escribe una
-                    instruccion concreta para mostrar el valor del sistema.
+                  <p className="reading-copy mt-2 text-sm leading-7 text-white/76">
+                    Usa una sugerencia, abre la demo guiada o escribe una
+                    pregunta concreta para mostrar el valor del sistema.
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-[rgba(23,49,59,0.08)] bg-white/72 p-5">
-                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Lo que deberia pasar
+                <div className="rounded-[24px] border border-white/10 bg-white/8 p-5">
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/60">
+                    Recorrido sugerido
                   </p>
-                  <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                  <div className="mt-4 space-y-3 text-sm leading-7 text-white/74">
                     <p>1. El agente identifica nivel, tono y objetivo.</p>
                     <p>2. Usa tus documentos como contexto.</p>
                     <p>3. Entrega una respuesta mas clara y explicable.</p>
@@ -471,13 +495,13 @@ function ChatPageContent() {
           </div>
 
           {error ? (
-            <div className="mt-4 rounded-2xl bg-[rgba(222,123,89,0.14)] p-4 text-sm text-[#96472f]">
+            <div className="mt-4 rounded-2xl border border-[rgba(255,125,108,0.22)] bg-[rgba(255,125,108,0.12)] p-4 text-sm text-[#ffd2cb]">
               {error}
             </div>
           ) : null}
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="status-pill">Preset {profile.preset}</span>
+            <span className="status-pill">{paletteLabel}</span>
             <span className="status-pill">Nivel {profile.readingLevel}</span>
             <span className="status-pill">Frases {profile.maxSentenceLength}</span>
             <span className="status-pill">Docs {documents.length}</span>
@@ -485,8 +509,8 @@ function ChatPageContent() {
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-[0.78fr_0.22fr]">
-            <div className="rounded-[24px] bg-white/60 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <div className="rounded-[24px] border border-white/10 bg-white/8 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
                 Carga cognitiva hoy
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -505,9 +529,9 @@ function ChatPageContent() {
                 ))}
               </div>
             </div>
-            <div className="rounded-[24px] bg-white/60 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Idioma
+            <div className="rounded-[24px] border border-white/10 bg-white/8 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
+                Idioma de salida
               </p>
               <select
                 value={targetLanguage}
@@ -540,7 +564,7 @@ function ChatPageContent() {
 
           {!immersiveMode && hasAssistantMessage ? (
             <div className="mt-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-white/60">
                 Antes vs despues de una respuesta
               </p>
               <div className="mt-4">
